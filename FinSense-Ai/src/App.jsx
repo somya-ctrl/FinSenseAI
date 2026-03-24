@@ -1,19 +1,19 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Signup from "./pages/Signup";
-import Login from "./pages/Login";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/Landingpage";
-import DashboardPage  from "./pages/Dashboard";
-function App() {
+import LoginPage from "./pages/LoginPage";
+import Signup from "./pages/Signup";
+import DashboardPage from "./pages/DashboardPage";
+
+export default function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-          <Route path="/landingpage" element={<LandingPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />  
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
-
-export default App;
