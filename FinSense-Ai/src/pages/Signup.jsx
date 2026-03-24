@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const EyeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -38,25 +38,77 @@ const PasswordStrength = ({ password }) => {
   return (
     <div className="flex gap-1 mt-1.5">
       {[0, 1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-            i < strength ? colors[strength - 1] : "bg-slate-200"
-          }`}
-        />
+        <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i < strength ? colors[strength - 1] : "bg-slate-200"}`} />
       ))}
     </div>
   );
 };
 
+// ✅ Change this to your actual backend URL
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
 export default function Signup() {
-  const [form, setForm] = useState({
-    fullName: "", businessName: "", email: "", password: ""
-  });
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setError("");
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name || !form.email || !form.password) {
+      setError("All fields are required.");
+      return;
+    }
+    if (!agreed) {
+      setError("Please agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch(`${API_BASE}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Registration failed. Please try again.");
+        return;
+      }
+
+      // Save token to localStorage
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      setSuccess("Account created successfully! Redirecting...");
+      setTimeout(() => navigate("/dashboard"), 1500);
+    } catch (err) {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -66,31 +118,19 @@ export default function Signup() {
         fontFamily: "'Georgia', 'Times New Roman', serif",
       }}
     >
-      {/* Navbar — same as LoginPage */}
+      {/* Navbar */}
       <nav className="flex items-center justify-between px-10 py-4">
         <span className="text-[#0d2d5e] font-bold text-lg tracking-tight" style={{ fontFamily: "Georgia, serif" }}>
           FinSense-AI
         </span>
         <div className="hidden md:flex items-center gap-8">
           {["Features", "Security", "Pricing"].map((item) => (
-            <a key={item} href="#" className="text-slate-500 text-sm hover:text-[#0d2d5e] transition-colors">
-              {item}
-            </a>
+            <a key={item} href="#" className="text-slate-500 text-sm hover:text-[#0d2d5e] transition-colors">{item}</a>
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <Link
-            to="/login"
-            className="text-slate-600 text-sm hover:text-[#0d2d5e] transition-colors px-3 py-1.5"
-          >
-            Login
-          </Link>
-          <Link
-            to="/signup"
-            className="bg-[#0d2d5e] text-white text-sm px-5 py-2 rounded-lg hover:bg-[#1a4a8a] transition-all shadow-md shadow-[#0d2d5e]/20"
-          >
-            Sign Up
-          </Link>
+          <Link to="/login" className="text-slate-600 text-sm hover:text-[#0d2d5e] transition-colors px-3 py-1.5">Login</Link>
+          <Link to="/signup" className="bg-[#0d2d5e] text-white text-sm px-5 py-2 rounded-lg hover:bg-[#1a4a8a] transition-all shadow-md shadow-[#0d2d5e]/20">Sign Up</Link>
         </div>
       </nav>
 
@@ -103,23 +143,13 @@ export default function Signup() {
             className="w-[42%] flex-shrink-0 flex flex-col justify-between p-10 relative overflow-hidden"
             style={{ background: "linear-gradient(160deg, #0d2d5e 0%, #1a4a8a 100%)" }}
           >
-            {/* Background pattern */}
             <div className="absolute inset-0 opacity-5">
               {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute border border-white rounded-full"
-                  style={{
-                    width: `${(i + 1) * 80}px`,
-                    height: `${(i + 1) * 80}px`,
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                  }}
+                <div key={i} className="absolute border border-white rounded-full"
+                  style={{ width: `${(i + 1) * 80}px`, height: `${(i + 1) * 80}px`, top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
                 />
               ))}
             </div>
-
             <div className="relative z-10">
               <h1 className="text-white text-3xl font-bold leading-tight mb-4" style={{ fontFamily: "Georgia, serif" }}>
                 Architectural<br />Precision in<br />Finance.
@@ -128,7 +158,6 @@ export default function Signup() {
                 Join the digital vault where small business owners find structural clarity and AI-driven insights.
               </p>
             </div>
-
             <div className="relative z-10 mt-8 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-6 h-6 rounded-full bg-emerald-400/20 border border-emerald-400/40 flex items-center justify-center">
@@ -145,48 +174,39 @@ export default function Signup() {
           {/* Right Panel */}
           <div className="flex-1 p-10 flex flex-col justify-center">
             <div className="mb-7">
-              <h2 className="text-[#0d2d5e] text-2xl font-bold mb-1" style={{ fontFamily: "Georgia, serif" }}>
-                Create Account
-              </h2>
+              <h2 className="text-[#0d2d5e] text-2xl font-bold mb-1" style={{ fontFamily: "Georgia, serif" }}>Create Account</h2>
               <p className="text-slate-400 text-sm">Start your journey toward financial clarity.</p>
             </div>
 
+            {/* Alerts */}
+            {error && (
+              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2">
+                <span>⚠</span> {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-600 text-sm flex items-center gap-2">
+                <span>✓</span> {success}
+              </div>
+            )}
+
             <div className="space-y-4">
-              {/* Name row */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">
-                    Full Name
-                  </label>
-                  <input
-                    name="fullName"
-                    value={form.fullName}
-                    onChange={handleChange}
-                    placeholder="Jane Doe"
-                    className="w-full px-3.5 py-2.5 text-sm text-slate-700 border border-slate-200 rounded-lg outline-none focus:border-[#1a4a8a] focus:ring-2 focus:ring-[#1a4a8a]/10 transition-all placeholder-slate-300"
-                    style={{ fontFamily: "Georgia, serif" }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">
-                    Business Name
-                  </label>
-                  <input
-                    name="businessName"
-                    value={form.businessName}
-                    onChange={handleChange}
-                    placeholder="Acme Studio"
-                    className="w-full px-3.5 py-2.5 text-sm text-slate-700 border border-slate-200 rounded-lg outline-none focus:border-[#1a4a8a] focus:ring-2 focus:ring-[#1a4a8a]/10 transition-all placeholder-slate-300"
-                    style={{ fontFamily: "Georgia, serif" }}
-                  />
-                </div>
+              {/* Name */}
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Full Name</label>
+                <input
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Jane Doe"
+                  className="w-full px-3.5 py-2.5 text-sm text-slate-700 border border-slate-200 rounded-lg outline-none focus:border-[#1a4a8a] focus:ring-2 focus:ring-[#1a4a8a]/10 transition-all placeholder-slate-300"
+                  style={{ fontFamily: "Georgia, serif" }}
+                />
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">
-                  Work Email
-                </label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Work Email</label>
                 <input
                   name="email"
                   type="email"
@@ -200,9 +220,7 @@ export default function Signup() {
 
               {/* Password */}
               <div>
-                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">
-                  Password
-                </label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Password</label>
                 <div className="relative">
                   <input
                     name="password"
@@ -213,18 +231,14 @@ export default function Signup() {
                     className="w-full px-3.5 py-2.5 pr-10 text-sm text-slate-700 border border-slate-200 rounded-lg outline-none focus:border-[#1a4a8a] focus:ring-2 focus:ring-[#1a4a8a]/10 transition-all placeholder-slate-300"
                     style={{ fontFamily: "Georgia, serif" }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  >
+                  <button type="button" onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                     <EyeIcon />
                   </button>
                 </div>
                 {form.password && <PasswordStrength password={form.password} />}
                 <p className="text-slate-400 text-[11px] mt-1.5 flex items-center gap-1">
-                  <span className="text-[#1a4a8a]">ⓘ</span>
-                  Must be at least 8 characters with a symbol.
+                  <span className="text-[#1a4a8a]">ⓘ</span> Must be at least 8 characters with a symbol.
                 </p>
               </div>
 
@@ -232,26 +246,32 @@ export default function Signup() {
               <label className="flex items-start gap-2.5 cursor-pointer group">
                 <div
                   onClick={() => setAgreed(!agreed)}
-                  className={`mt-0.5 w-4 h-4 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${
-                    agreed ? "bg-[#0d2d5e] border-[#0d2d5e]" : "border-slate-300 group-hover:border-[#1a4a8a]"
-                  }`}
+                  className={`mt-0.5 w-4 h-4 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${agreed ? "bg-[#0d2d5e] border-[#0d2d5e]" : "border-slate-300 group-hover:border-[#1a4a8a]"}`}
                 >
                   {agreed && <span className="text-white text-[10px]">✓</span>}
                 </div>
                 <span className="text-slate-500 text-xs leading-relaxed">
-                  I agree to the{" "}
-                  <a href="#" className="text-[#1a4a8a] underline underline-offset-2">Terms of Service</a>
-                  {" "}and{" "}
-                  <a href="#" className="text-[#1a4a8a] underline underline-offset-2">Privacy Policy</a>
+                  I agree to the <a href="#" className="text-[#1a4a8a] underline underline-offset-2">Terms of Service</a> and <a href="#" className="text-[#1a4a8a] underline underline-offset-2">Privacy Policy</a>
                 </span>
               </label>
 
-              {/* CTA */}
+              {/* Submit */}
               <button
-                className="w-full py-3 bg-[#0d2d5e] hover:bg-[#1a4a8a] text-white text-sm font-semibold rounded-lg transition-all duration-200 tracking-wide shadow-md shadow-[#0d2d5e]/20 hover:shadow-lg hover:shadow-[#0d2d5e]/30 hover:-translate-y-0.5 active:translate-y-0"
+                onClick={handleSubmit}
+                disabled={loading}
+                className={`w-full py-3 text-white text-sm font-semibold rounded-lg transition-all duration-200 tracking-wide shadow-md flex items-center justify-center gap-2
+                  ${loading ? "bg-slate-400 cursor-not-allowed" : "bg-[#0d2d5e] hover:bg-[#1a4a8a] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"}`}
                 style={{ fontFamily: "Georgia, serif" }}
               >
-                Create Account
+                {loading ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Creating Account...
+                  </>
+                ) : "Create Account"}
               </button>
 
               {/* Divider */}
@@ -264,20 +284,16 @@ export default function Signup() {
               {/* Social */}
               <div className="grid grid-cols-2 gap-3">
                 <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
-                  <GoogleIcon />
-                  Google
+                  <GoogleIcon /> Google
                 </button>
                 <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
-                  <LinkedInIcon />
-                  LinkedIn
+                  <LinkedInIcon /> LinkedIn
                 </button>
               </div>
 
               <p className="text-center text-slate-400 text-sm">
                 Already have an account?{" "}
-                <Link to="/login" className="text-[#0d2d5e] font-semibold hover:underline">
-                  Login
-                </Link>
+                <Link to="/login" className="text-[#0d2d5e] font-semibold hover:underline">Login</Link>
               </p>
             </div>
           </div>
@@ -287,18 +303,12 @@ export default function Signup() {
       {/* Footer */}
       <footer className="px-10 py-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/60">
         <div className="flex items-center gap-5">
-          <span className="text-[#0d2d5e] text-xs font-bold uppercase tracking-widest">
-            FinSense-AI
-          </span>
+          <span className="text-[#0d2d5e] text-xs font-bold uppercase tracking-widest">FinSense-AI</span>
           {["Privacy Policy", "Terms of Service", "Support", "Security Standards"].map((link) => (
-            <a key={link} href="#" className="text-slate-400 text-[10px] uppercase tracking-widest hover:text-[#0d2d5e] transition-colors hidden sm:inline">
-              {link}
-            </a>
+            <a key={link} href="#" className="text-slate-400 text-[10px] uppercase tracking-widest hover:text-[#0d2d5e] transition-colors hidden sm:inline">{link}</a>
           ))}
         </div>
-        <p className="text-slate-400 text-[10px] uppercase tracking-widest">
-          © 2024 FinSense-AI. Architectural Precision in Finance.
-        </p>
+        <p className="text-slate-400 text-[10px] uppercase tracking-widest">© 2024 FinSense-AI. Architectural Precision in Finance.</p>
       </footer>
     </div>
   );

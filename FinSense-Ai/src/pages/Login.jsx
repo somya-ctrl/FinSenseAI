@@ -1,5 +1,6 @@
 import { useState } from "react";
-import {Link} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
 const GoogleIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -40,12 +41,72 @@ const EyeIcon = ({ open }) => (
   </svg>
 );
 
-export default function Login() {
+// ✅ Change this to your actual backend URL
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+
+export default function LoginPage() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setError("");
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async () => {
+    if (!form.email || !form.password) {
+      setError("Email and password are required.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch(`${API_BASE}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Invalid credentials. Please try again.");
+        return;
+      }
+
+      // Save token to localStorage
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      // Save user info if returned
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
+
+      // Redirect to dashboard
+      navigate("/dashboard");
+    } catch (err) {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Allow Enter key to submit
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") handleSubmit();
+  };
 
   return (
     <div
@@ -62,38 +123,21 @@ export default function Login() {
         </span>
         <div className="hidden md:flex items-center gap-8">
           {["Features", "Security", "Pricing"].map((item) => (
-            <a key={item} href="#" className="text-slate-500 text-sm hover:text-[#0d2d5e] transition-colors">
-              {item}
-            </a>
+            <a key={item} href="#" className="text-slate-500 text-sm hover:text-[#0d2d5e] transition-colors">{item}</a>
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <Link
-           to="/login"
-           className="text-slate-600 text-sm hover:text-[#0d2d5e] transition-colors px-3 py-1.5">
-            Login
-          </Link>
-          <Link
-            to="/signup"
-            className="bg-[#0d2d5e] text-white text-sm px-5 py-2 rounded-lg hover:bg-[#1a4a8a] transition-all shadow-md shadow-[#0d2d5e]/20"
-          >
-            Sign Up
-          </Link>
+          <Link to="/login" className="text-slate-600 text-sm hover:text-[#0d2d5e] transition-colors px-3 py-1.5">Login</Link>
+          <Link to="/signup" className="bg-[#0d2d5e] text-white text-sm px-5 py-2 rounded-lg hover:bg-[#1a4a8a] transition-all shadow-md shadow-[#0d2d5e]/20">Sign Up</Link>
         </div>
       </nav>
 
       {/* Main */}
       <main className="flex-1 flex items-center px-10 py-8 relative">
 
-        {/* Decorative blurred card behind the form */}
-        <div
-          className="absolute right-[13%] top-[8%] w-72 h-28 rounded-2xl opacity-30 blur-sm"
-          style={{ background: "linear-gradient(135deg, #c9d6e8, #dde4f0)" }}
-        />
-        <div
-          className="absolute right-[10%] bottom-[12%] w-56 h-20 rounded-2xl opacity-20 blur-sm"
-          style={{ background: "linear-gradient(135deg, #b8c9e0, #cdd8ed)" }}
-        />
+        {/* Decorative cards */}
+        <div className="absolute right-[13%] top-[8%] w-72 h-28 rounded-2xl opacity-30 blur-sm" style={{ background: "linear-gradient(135deg, #c9d6e8, #dde4f0)" }} />
+        <div className="absolute right-[10%] bottom-[12%] w-56 h-20 rounded-2xl opacity-20 blur-sm" style={{ background: "linear-gradient(135deg, #b8c9e0, #cdd8ed)" }} />
 
         {/* Left — Brand copy */}
         <div className="flex-1 max-w-lg pr-8">
@@ -101,16 +145,13 @@ export default function Login() {
             <span className="inline-block w-6 h-px bg-[#1a6bbf]" />
             Security Protocol 4.0
           </p>
-
           <h1 className="text-[#0d2d5e] text-5xl font-bold leading-tight mb-4" style={{ fontFamily: "Georgia, serif" }}>
             Enter the<br />
             <span className="text-[#1a6bbf]">Digital Vault.</span>
           </h1>
-
           <p className="text-slate-500 text-sm leading-relaxed max-w-xs mb-8">
             Architectural precision in finance. Access your insights with encrypted clarity and absolute structural integrity.
           </p>
-
           <div className="flex items-center gap-3">
             <span className="inline-block w-8 h-px bg-[#1a6bbf]" />
             <p className="text-slate-500 text-sm italic" style={{ fontFamily: "Georgia, serif" }}>
@@ -122,29 +163,30 @@ export default function Login() {
         {/* Right — Login Card */}
         <div className="w-full max-w-sm">
           <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/70 p-8">
-
             <div className="mb-6">
-              <h2 className="text-[#0d2d5e] text-2xl font-bold mb-1" style={{ fontFamily: "Georgia, serif" }}>
-                Welcome Back
-              </h2>
+              <h2 className="text-[#0d2d5e] text-2xl font-bold mb-1" style={{ fontFamily: "Georgia, serif" }}>Welcome Back</h2>
               <p className="text-slate-400 text-sm">Please identify yourself to proceed.</p>
             </div>
+
+            {/* Error Alert */}
+            {error && (
+              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2">
+                <span>⚠</span> {error}
+              </div>
+            )}
 
             <div className="space-y-4">
               {/* Email */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-                  Professional Email
-                </label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Professional Email</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <MailIcon />
-                  </span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2"><MailIcon /></span>
                   <input
                     name="email"
                     type="email"
                     value={form.email}
                     onChange={handleChange}
+                    onKeyDown={handleKeyDown}
                     placeholder="name@company.com"
                     className="w-full pl-9 pr-4 py-2.5 text-sm text-slate-700 border border-slate-200 rounded-lg outline-none focus:border-[#1a6bbf] focus:ring-2 focus:ring-[#1a6bbf]/10 transition-all placeholder-slate-300"
                     style={{ fontFamily: "Georgia, serif" }}
@@ -155,31 +197,23 @@ export default function Login() {
               {/* Password */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Vault Key
-                  </label>
-                  <a href="#" className="text-[#1a6bbf] text-xs hover:underline">
-                    Forgot password?
-                  </a>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vault Key</label>
+                  <a href="#" className="text-[#1a6bbf] text-xs hover:underline">Forgot password?</a>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <LockIcon />
-                  </span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2"><LockIcon /></span>
                   <input
                     name="password"
                     type={showPass ? "text" : "password"}
                     value={form.password}
                     onChange={handleChange}
+                    onKeyDown={handleKeyDown}
                     placeholder="••••••••"
                     className="w-full pl-9 pr-10 py-2.5 text-sm text-slate-700 border border-slate-200 rounded-lg outline-none focus:border-[#1a6bbf] focus:ring-2 focus:ring-[#1a6bbf]/10 transition-all placeholder-slate-300"
                     style={{ fontFamily: "Georgia, serif" }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  >
+                  <button type="button" onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                     <EyeIcon open={showPass} />
                   </button>
                 </div>
@@ -189,24 +223,37 @@ export default function Login() {
               <label className="flex items-center gap-2.5 cursor-pointer group">
                 <div
                   onClick={() => setRemember(!remember)}
-                  className={`w-4 h-4 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${
-                    remember ? "bg-[#0d2d5e] border-[#0d2d5e]" : "border-slate-300 group-hover:border-[#1a6bbf]"
-                  }`}
+                  className={`w-4 h-4 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${remember ? "bg-[#0d2d5e] border-[#0d2d5e]" : "border-slate-300 group-hover:border-[#1a6bbf]"}`}
                 >
                   {remember && <span className="text-white text-[10px]">✓</span>}
                 </div>
                 <span className="text-slate-500 text-sm">Maintain active session</span>
               </label>
 
-              {/* CTA */}
+              {/* Submit */}
               <button
-                className="w-full py-3 bg-[#0d2d5e] hover:bg-[#1a4a8a] text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-md shadow-[#0d2d5e]/20 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                onClick={handleSubmit}
+                disabled={loading}
+                className={`w-full py-3 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-md
+                  ${loading ? "bg-slate-400 cursor-not-allowed" : "bg-[#0d2d5e] hover:bg-[#1a4a8a] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"}`}
                 style={{ fontFamily: "Georgia, serif" }}
               >
-                Login
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
+                {loading ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Logging in...
+                  </>
+                ) : (
+                  <>
+                    Login
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </>
+                )}
               </button>
 
               {/* Divider */}
@@ -219,21 +266,16 @@ export default function Login() {
               {/* Social */}
               <div className="grid grid-cols-2 gap-3">
                 <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
-                  <GoogleIcon />
-                  Google
+                  <GoogleIcon /> Google
                 </button>
                 <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
-                  <MicrosoftIcon />
-                  Microsoft
+                  <MicrosoftIcon /> Microsoft
                 </button>
               </div>
 
               <p className="text-center text-slate-400 text-sm">
                 No credentials yet?{" "}
-               
-                 <Link
-                 to="/signup"
-                 className="text-[#1a6bbf] font-semibold hover:underline">Establish an account</Link>
+                <Link to="/signup" className="text-[#1a6bbf] font-semibold hover:underline">Establish an Account</Link>
               </p>
             </div>
           </div>
@@ -243,18 +285,12 @@ export default function Login() {
       {/* Footer */}
       <footer className="px-10 py-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/60">
         <div className="flex items-center gap-5">
-          <span className="text-[#0d2d5e] text-xs font-bold uppercase tracking-widest">
-            FinSense-AI
-          </span>
+          <span className="text-[#0d2d5e] text-xs font-bold uppercase tracking-widest">FinSense-AI</span>
           {["Privacy Policy", "Terms of Service", "Support", "Security Standards"].map((link) => (
-            <a key={link} href="#" className="text-slate-400 text-[10px] uppercase tracking-widest hover:text-[#0d2d5e] transition-colors hidden sm:inline">
-              {link}
-            </a>
+            <a key={link} href="#" className="text-slate-400 text-[10px] uppercase tracking-widest hover:text-[#0d2d5e] transition-colors hidden sm:inline">{link}</a>
           ))}
         </div>
-        <p className="text-slate-400 text-[10px] uppercase tracking-widest">
-          © 2024 FinSense-AI. Architectural Precision in Finance.
-        </p>
+        <p className="text-slate-400 text-[10px] uppercase tracking-widest">© 2024 FinSense-AI. Architectural Precision in Finance.</p>
       </footer>
     </div>
   );
