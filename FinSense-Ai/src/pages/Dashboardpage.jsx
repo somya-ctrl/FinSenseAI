@@ -14,7 +14,7 @@ const Icon = ({ name, className = "", filled = false }) => (
 const navItems = [
   { icon: "dashboard", label: "Overview", path: "/dashboard", active: true },
   { icon: "payments", label: "Cash Flow", path: "/cash-flow" },
-  { icon: "account_balance", label: "Ledger", path: "#" },
+  { icon: "account_balance", label: "Analyze transaction", path: "/analyze", active: true},
   { icon: "description", label: "Invoices", path: "#" },
   { icon: "bar_chart", label: "Reports", path: "#" },
   { icon: "settings", label: "Settings", path: "#" },
