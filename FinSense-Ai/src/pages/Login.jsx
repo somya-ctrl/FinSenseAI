@@ -10,15 +10,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const MicrosoftIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24">
-    <path fill="#F25022" d="M1 1h10v10H1z"/>
-    <path fill="#7FBA00" d="M13 1h10v10H13z"/>
-    <path fill="#00A4EF" d="M1 13h10v10H1z"/>
-    <path fill="#FFB900" d="M13 13h10v10H13z"/>
-  </svg>
-);
-
 const MailIcon = () => (
   <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -41,9 +32,7 @@ const EyeIcon = ({ open }) => (
   </svg>
 );
 
-// ✅ Change this to your actual backend URL
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
-
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -52,6 +41,7 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleChange = (e) => {
     setError("");
@@ -63,38 +53,21 @@ export default function LoginPage() {
       setError("Email and password are required.");
       return;
     }
-
     setLoading(true);
     setError("");
-
     try {
       const res = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-        }),
+        body: JSON.stringify({ email: form.email, password: form.password }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.message || "Invalid credentials. Please try again.");
         return;
       }
-
-      // Save token to localStorage
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
-
-      // Save user info if returned
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-      }
-
-      // Redirect to dashboard
+      if (data.token) localStorage.setItem("token", data.token);
+      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
       navigate("/dashboard");
     } catch (err) {
       setError("Network error. Please check your connection and try again.");
@@ -103,7 +76,6 @@ export default function LoginPage() {
     }
   };
 
-  // Allow Enter key to submit
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleSubmit();
   };
@@ -116,31 +88,60 @@ export default function LoginPage() {
         fontFamily: "'Georgia', 'Times New Roman', serif",
       }}
     >
-      {/* Navbar */}
-      <nav className="flex items-center justify-between px-10 py-4">
-        <span className="text-[#0d2d5e] font-bold text-lg tracking-tight" style={{ fontFamily: "Georgia, serif" }}>
-          FinSense-AI
-        </span>
+      {/* ── Navbar ── */}
+      <nav className="flex items-center justify-between px-5 sm:px-8 lg:px-10 py-4 relative z-20">
+        <span className="text-[#0d2d5e] font-bold text-lg tracking-tight">FinSense-AI</span>
+
+        {/* Desktop links */}
         <div className="hidden md:flex items-center gap-8">
           {["Features", "Security", "Pricing"].map((item) => (
             <a key={item} href="#" className="text-slate-500 text-sm hover:text-[#0d2d5e] transition-colors">{item}</a>
           ))}
         </div>
-        <div className="flex items-center gap-3">
+
+        {/* Desktop auth */}
+        <div className="hidden md:flex items-center gap-3">
           <Link to="/login" className="text-slate-600 text-sm hover:text-[#0d2d5e] transition-colors px-3 py-1.5">Login</Link>
           <Link to="/signup" className="bg-[#0d2d5e] text-white text-sm px-5 py-2 rounded-lg hover:bg-[#1a4a8a] transition-all shadow-md shadow-[#0d2d5e]/20">Sign Up</Link>
         </div>
+
+        {/* Mobile hamburger */}
+        <button
+          className="md:hidden p-1.5 rounded-md text-slate-600 hover:text-[#0d2d5e] hover:bg-slate-100 transition-all"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle menu"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {menuOpen
+              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            }
+          </svg>
+        </button>
       </nav>
 
-      {/* Main */}
-      <main className="flex-1 flex items-center px-10 py-8 relative">
+      {/* Mobile dropdown */}
+      {menuOpen && (
+        <div className="md:hidden bg-white/95 backdrop-blur-sm border-b border-slate-200 px-5 py-4 flex flex-col gap-3 shadow-sm z-10">
+          {["Features", "Security", "Pricing"].map((item) => (
+            <a key={item} href="#" className="text-slate-600 text-sm hover:text-[#0d2d5e] transition-colors py-1.5 border-b border-slate-100 last:border-0">{item}</a>
+          ))}
+          <div className="flex items-center gap-3 pt-1">
+            <Link to="/login" className="text-slate-600 text-sm font-medium hover:text-[#0d2d5e]">Login</Link>
+            <Link to="/signup" className="bg-[#0d2d5e] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#1a4a8a] transition-all">Sign Up</Link>
+          </div>
+        </div>
+      )}
 
-        {/* Decorative cards */}
-        <div className="absolute right-[13%] top-[8%] w-72 h-28 rounded-2xl opacity-30 blur-sm" style={{ background: "linear-gradient(135deg, #c9d6e8, #dde4f0)" }} />
-        <div className="absolute right-[10%] bottom-[12%] w-56 h-20 rounded-2xl opacity-20 blur-sm" style={{ background: "linear-gradient(135deg, #b8c9e0, #cdd8ed)" }} />
+      {/* ── Main ── */}
+      <main className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-0 px-5 sm:px-8 lg:px-16 py-10 lg:py-0 relative overflow-hidden">
 
-        {/* Left — Brand copy */}
-        <div className="flex-1 max-w-lg pr-8">
+        {/* Decorative blobs — desktop only */}
+        <div className="hidden lg:block absolute right-[13%] top-[8%] w-72 h-28 rounded-2xl opacity-30 blur-sm" style={{ background: "linear-gradient(135deg, #c9d6e8, #dde4f0)" }} />
+        <div className="hidden lg:block absolute right-[10%] bottom-[12%] w-56 h-20 rounded-2xl opacity-20 blur-sm" style={{ background: "linear-gradient(135deg, #b8c9e0, #cdd8ed)" }} />
+
+        {/* Left — full brand copy on lg+ */}
+        <div className="hidden lg:flex flex-1 flex-col max-w-lg pr-10">
           <p className="text-[#1a6bbf] text-xs font-bold uppercase tracking-[0.2em] mb-5 flex items-center gap-2">
             <span className="inline-block w-6 h-px bg-[#1a6bbf]" />
             Security Protocol 4.0
@@ -154,24 +155,35 @@ export default function LoginPage() {
           </p>
           <div className="flex items-center gap-3">
             <span className="inline-block w-8 h-px bg-[#1a6bbf]" />
-            <p className="text-slate-500 text-sm italic" style={{ fontFamily: "Georgia, serif" }}>
-              Clarity over complexity.
-            </p>
+            <p className="text-slate-500 text-sm italic" style={{ fontFamily: "Georgia, serif" }}>Clarity over complexity.</p>
           </div>
         </div>
 
-        {/* Right — Login Card */}
+        {/* Mobile/tablet compact brand heading */}
+        <div className="lg:hidden w-full max-w-sm text-center">
+          <p className="text-[#1a6bbf] text-[10px] font-bold uppercase tracking-[0.2em] mb-3 flex items-center justify-center gap-2">
+            <span className="inline-block w-5 h-px bg-[#1a6bbf]" />
+            Security Protocol 4.0
+            <span className="inline-block w-5 h-px bg-[#1a6bbf]" />
+          </p>
+          <h1 className="text-[#0d2d5e] text-3xl sm:text-4xl font-bold leading-tight mb-1" style={{ fontFamily: "Georgia, serif" }}>
+            Enter the <span className="text-[#1a6bbf]">Digital Vault.</span>
+          </h1>
+          <p className="text-slate-500 text-sm italic">Clarity over complexity.</p>
+        </div>
+
+        {/* ── Login Card ── */}
         <div className="w-full max-w-sm">
-          <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/70 p-8">
+          <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/70 p-6 sm:p-8">
             <div className="mb-6">
               <h2 className="text-[#0d2d5e] text-2xl font-bold mb-1" style={{ fontFamily: "Georgia, serif" }}>Welcome Back</h2>
               <p className="text-slate-400 text-sm">Please identify yourself to proceed.</p>
             </div>
 
-            {/* Error Alert */}
             {error && (
-              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2">
-                <span>⚠</span> {error}
+              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
+                <span className="mt-px flex-shrink-0">⚠</span>
+                <span>{error}</span>
               </div>
             )}
 
@@ -259,19 +271,14 @@ export default function LoginPage() {
               {/* Divider */}
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px bg-slate-200" />
-                <span className="text-slate-400 text-[10px] uppercase tracking-widest">External Identity</span>
+                <span className="text-slate-400 text-[10px] uppercase tracking-widest whitespace-nowrap">External Identity</span>
                 <div className="flex-1 h-px bg-slate-200" />
               </div>
 
-              {/* Social */}
-              <div className="grid grid-cols-2 gap-3">
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
-                  <GoogleIcon /> Google
-                </button>
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
-                  <MicrosoftIcon /> Microsoft
-                </button>
-              </div>
+              {/* Google */}
+              <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
+                <GoogleIcon /> Google
+              </button>
 
               <p className="text-center text-slate-400 text-sm">
                 No credentials yet?{" "}
@@ -282,15 +289,18 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="px-10 py-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/60">
-        <div className="flex items-center gap-5">
+      {/* ── Footer ── */}
+      <footer className="px-5 sm:px-8 lg:px-10 py-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/60">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-5">
           <span className="text-[#0d2d5e] text-xs font-bold uppercase tracking-widest">FinSense-AI</span>
           {["Privacy Policy", "Terms of Service", "Support", "Security Standards"].map((link) => (
-            <a key={link} href="#" className="text-slate-400 text-[10px] uppercase tracking-widest hover:text-[#0d2d5e] transition-colors hidden sm:inline">{link}</a>
+            <a key={link} href="#" className="hidden sm:inline text-slate-400 text-[10px] uppercase tracking-widest hover:text-[#0d2d5e] transition-colors">{link}</a>
           ))}
         </div>
-        <p className="text-slate-400 text-[10px] uppercase tracking-widest">© 2024 FinSense-AI. Architectural Precision in Finance.</p>
+        <p className="text-slate-400 text-[10px] uppercase tracking-widest">
+          <span className="hidden sm:inline">© 2024 FinSense-AI. Architectural Precision in Finance.</span>
+          <span className="sm:hidden">© 2024 FinSense-AI</span>
+        </p>
       </footer>
     </div>
   );

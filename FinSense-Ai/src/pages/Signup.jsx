@@ -282,15 +282,11 @@ export default function Signup() {
               </div>
 
               {/* Social */}
-              <div className="grid grid-cols-2 gap-3">
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
-                  <GoogleIcon /> Google
-                </button>
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
-                  <LinkedInIcon /> LinkedIn
-                </button>
-              </div>
-
+              
+           <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
+            <GoogleIcon /> Google
+             </button>
+              
               <p className="text-center text-slate-400 text-sm">
                 Already have an account?{" "}
                 <Link to="/login" className="text-[#0d2d5e] font-semibold hover:underline">Login</Link>
