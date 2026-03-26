@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
+import { GoogleLogin } from "@react-oauth/google";
+import axios from "axios";
 const GoogleIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -275,10 +276,26 @@ export default function LoginPage() {
                 <div className="flex-1 h-px bg-slate-200" />
               </div>
 
-              {/* Google */}
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-600 text-sm font-medium">
-                <GoogleIcon /> Google
-              </button>
+              <GoogleLogin
+  onSuccess={async (credentialResponse) => {
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/google",
+        {
+          credential: credentialResponse.credential,
+        }
+      );
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      window.location.href = "/dashboard";
+    } catch (err) {
+      console.error("Google login failed", err);
+    }
+  }}
+  onError={() => console.log("Login Failed")}
+/>
 
               <p className="text-center text-slate-400 text-sm">
                 No credentials yet?{" "}

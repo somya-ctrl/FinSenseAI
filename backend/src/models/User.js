@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     email: {
       type: String,
       required: true,
@@ -14,10 +15,20 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+
     password: {
       type: String,
-      required: true,
-      minlength: 6,
+      default: null, // Google users won't need password
+    },
+
+    googleId: {
+      type: String,
+      default: null,
+    },
+
+    avatar: {
+      type: String,
+      default: "",
     },
   },
   { timestamps: true }
