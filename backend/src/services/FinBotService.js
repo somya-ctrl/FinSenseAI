@@ -2,7 +2,7 @@ const axios = require("axios");
 const https = require("https");
 
 const FINBOT_BASE_URL =
-  process.env.FINBOT_BASE_URL || "https://finsense-project.onrender.com";
+  process.env.FINBOT_BASE_URL || "https://finbot-nct0.onrender.com";
 
 // Reuse HTTPS agent
 const httpsAgent = new https.Agent({
@@ -35,7 +35,7 @@ const sendMessage = async (user_id, business_id, message, reset = false) => {
 
     return response.data;
   } catch (error) {
-    console.error("❌ FinBot sendMessage error:", error?.response?.data || error.message);
+    console.error("FinBot sendMessage error:", error?.response?.data || error.message);
 
     throw new Error(
       error?.response?.data?.detail ||

@@ -1,15 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:3000/api";
-const BUSINESS_ID = "BIZ_001";
+const API_BASE_URL = "http://localhost:3000/api"; // ✅ backend URL
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+const BUSINESS_ID = localStorage.getItem("business_id") || "BIZ_001";
+const USER_ID = user?.id || user?._id || user?.user_id || "";
 
 function Icon({ name, filled = false, className = "" }) {
   return (
     <span
       className={`material-symbols-outlined select-none ${className}`}
       style={{
-        fontVariationSettings: filled ? "'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24" : "'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24",
+        fontVariationSettings: filled
+          ? "'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24"
+          : "'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24",
         verticalAlign: "middle",
       }}
     >
@@ -33,7 +37,7 @@ const INITIAL_MESSAGES = [
     content: (
       <p>
         Good morning. I've analyzed your ledgers for{" "}
-        <span className="font-bold text-[#00426d]">BIZ_001</span>. How can I
+        <span className="font-bold text-[#00426d]">{BUSINESS_ID}</span>. How can I
         help you today?
       </p>
     ),
@@ -42,6 +46,13 @@ const INITIAL_MESSAGES = [
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function Sidebar() {
+  const handleSignOut = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("business_id");
+    window.location.href = "/login";
+  };
+
   return (
     <aside className="w-[260px] shrink-0 flex flex-col h-full bg-[#f2f4f6]/90 backdrop-blur-xl shadow-[40px_0_40px_-20px_rgba(25,28,30,0.06)] z-40">
       <div className="p-6 flex flex-col h-full">
@@ -96,9 +107,12 @@ function Sidebar() {
         </div>
 
         <div className="mt-auto pt-5 border-t border-gray-200">
-          <button className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#e6e8ea] hover:bg-[#e0e3e5] text-[#00426d] font-bold text-xs rounded-xl transition-all active:scale-95">
-            <Icon name="swap_horiz" className="text-sm" />
-            Change Business
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#e6e8ea] hover:bg-[#e0e3e5] text-[#00426d] font-bold text-xs rounded-xl transition-all active:scale-95"
+          >
+            <Icon name="logout" className="text-sm" />
+            Sign Out
           </button>
         </div>
       </div>
@@ -127,14 +141,6 @@ function TopBar({ onClear }) {
           <Icon name="delete_sweep" className="text-lg" />
           Clear Chat
         </button>
-        <div className="w-px h-6 bg-gray-200 mx-1" />
-        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[#00426d]/20">
-          <img
-            className="w-full h-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4wDnAcO8Xiuj0-joQCgGg0m9bz2VZsHPQh6Wnxcjq4jWzPERM6aCQ8ApyPE-hwrwi0KQ4ZcCygrwnWUyC_RN-OQ_bpq2EyOsgVSLsPRocj_UajH83DuO8YW623AjFAxSR7kMGdQiw4aLcOa1mrK9mGgBVzj7y_gU-hH6b4iaH5MCjpS8uYJ3hgHqVVxTNrS0iuqHWIMVExsvKyFTXE76sRHLlVdbZuT-_xfMOWQS1pbPOzuGS_uZQRjVK6EcdYlEaThYFfcRkE0wr"
-            alt="User avatar"
-          />
-        </div>
       </div>
     </header>
   );
@@ -183,7 +189,7 @@ function UserMessage({ children }) {
 }
 
 // ── Chat input ────────────────────────────────────────────────────────────────
-function ChatInput({ onSend, onQuickAction, isTyping }) {
+function ChatInput({ onSend, isTyping }) {
   const [text, setText] = useState("");
   const textareaRef = useRef(null);
 
@@ -213,7 +219,7 @@ function ChatInput({ onSend, onQuickAction, isTyping }) {
         {QUICK_ACTIONS.map((label) => (
           <button
             key={label}
-            onClick={() => onQuickAction(label)}
+            onClick={() => onSend(label)}
             disabled={isTyping}
             className="px-4 py-2 bg-white border border-gray-200 rounded-full text-xs font-bold text-[#00426d] hover:bg-[#00426d] hover:text-white transition-all shadow-sm active:scale-95 disabled:opacity-50"
           >
@@ -237,9 +243,6 @@ function ChatInput({ onSend, onQuickAction, isTyping }) {
           />
         </div>
         <div className="flex items-center gap-2 p-2">
-          <button className="p-3 text-[#717881] hover:bg-[#f2f4f6] rounded-xl transition-colors">
-            <Icon name="attach_file" />
-          </button>
           <button
             onClick={handleSend}
             disabled={isTyping}
@@ -249,10 +252,6 @@ function ChatInput({ onSend, onQuickAction, isTyping }) {
           </button>
         </div>
       </div>
-
-      <p className="text-center mt-3 text-[10px] font-bold text-[#717881] uppercase tracking-widest opacity-60">
-        Powered by Llama 3.1 via HuggingFace • FinSenseAi
-      </p>
     </footer>
   );
 }
@@ -267,27 +266,36 @@ export default function FinBotAI() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // ── Send message to backend ─────────────────────────────────
   const handleSend = async (text) => {
-    // 1. Add user message
     const userMsg = {
       id: Date.now(),
       role: "user",
       content: <p>{text}</p>,
     };
+
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
 
     try {
-      // 2. Call your Node.js backend
-      const response = await axios.post(`${API_BASE_URL}/finbot/chat`, {
-        business_id: BUSINESS_ID,
-        message: text,
-      });
+      const token = localStorage.getItem("token");
+
+      const response = await axios.post(
+        `${API_BASE_URL}/finbot/chat`,
+        {
+          business_id: BUSINESS_ID,
+          message: text,
+           user_id:USER_ID ,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const reply = response.data.reply;
 
-      // 3. Add bot reply
       setMessages((prev) => [
         ...prev,
         {
@@ -297,9 +305,7 @@ export default function FinBotAI() {
           content: <p>{reply}</p>,
         },
       ]);
-
     } catch (error) {
-      // 4. Show error message in chat
       setMessages((prev) => [
         ...prev,
         {
@@ -311,6 +317,7 @@ export default function FinBotAI() {
               ⚠️ Unable to connect to FinBot. Please try again.
             </p>
           ),
+           
         },
       ]);
     } finally {
@@ -318,15 +325,26 @@ export default function FinBotAI() {
     }
   };
 
-  // ── Clear chat + reset backend history ─────────────────────
   const handleClear = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/finbot/chat/reset`, {
-        business_id: BUSINESS_ID,
-      });
+      const token = localStorage.getItem("token");
+
+      await axios.post(
+        `${API_BASE_URL}/finbot/chat/reset`,
+        {
+             user_id: USER_ID,
+          business_id: BUSINESS_ID,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
     } catch (error) {
       console.error("Reset error:", error.message);
     }
+
     setMessages(INITIAL_MESSAGES);
     setIsTyping(false);
   };
@@ -347,14 +365,16 @@ export default function FinBotAI() {
               msg.role === "user" ? (
                 <UserMessage key={msg.id}>{msg.content}</UserMessage>
               ) : (
-                <BotMessage key={msg.id} icon={msg.icon}>{msg.content}</BotMessage>
+                <BotMessage key={msg.id} icon={msg.icon}>
+                  {msg.content}
+                </BotMessage>
               )
             )}
             {isTyping && <BotMessage icon="auto_awesome" isTyping />}
             <div ref={bottomRef} />
           </section>
 
-          <ChatInput onSend={handleSend} onQuickAction={handleSend} isTyping={isTyping} />
+          <ChatInput onSend={handleSend} isTyping={isTyping} />
         </main>
       </div>
     </>

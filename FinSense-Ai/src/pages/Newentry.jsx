@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 // Icon component using Material Symbols Outlined
 function Icon({ name, className = "" }) {
@@ -9,16 +9,24 @@ function Icon({ name, className = "" }) {
 }
 
 const navItems = [
-  { icon: "dashboard",    label: "Overview",             path: "/dashboard" },
-  { icon: "trending_up",  label: "Cash Flow Prediction", path: "/cash-flow" },
-  { icon: "query_stats",  label: "Analyze Transaction",  path: "/analyze" },
-  { icon: "smart_toy",    label: "Finbot",                path: "/finbot" },
-  { icon: "description",  label: "Reports",              path: "/reports" },
-  { icon: "settings",     label: "Settings",             path: "/settings" },
+  { icon: "dashboard", label: "Overview", path: "/dashboard" },
+  { icon: "trending_up", label: "Cash Flow Prediction", path: "/cash-flow" },
+  { icon: "query_stats", label: "Analyze Transaction", path: "/analyze" },
+  { icon: "smart_toy", label: "Finbot", path: "/finbot" },
+  { icon: "description", label: "Reports", path: "/reports" },
+  { icon: "settings", label: "Settings", path: "/settings" },
 ];
 
 function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("business_id");
+    navigate("/login");
+  };
 
   return (
     <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-50 flex flex-col p-6 space-y-2 z-40">
@@ -48,7 +56,9 @@ function Sidebar() {
               }`}
             >
               <Icon name={icon} className="text-[20px]" />
-              <span className="uppercase tracking-widest text-[10px] font-bold">{label}</span>
+              <span className="uppercase tracking-widest text-[10px] font-bold">
+                {label}
+              </span>
             </Link>
           );
         })}
@@ -62,19 +72,26 @@ function Sidebar() {
         >
           New Entry
         </Link>
-        {[
-          { icon: "help_outline", label: "Help Center", path: "/help" },
-          { icon: "logout",       label: "Sign Out",    path: "/signout" },
-        ].map(({ icon, label, path }) => (
-          <Link
-            key={label}
-            to={path}
-            className="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-200/50 transition-all duration-300 rounded-lg"
-          >
-            <Icon name={icon} className="text-[20px]" />
-            <span className="uppercase tracking-widest text-[10px] font-bold">{label}</span>
-          </Link>
-        ))}
+
+        <Link
+          to="/help"
+          className="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-200/50 transition-all duration-300 rounded-lg"
+        >
+          <Icon name="help_outline" className="text-[20px]" />
+          <span className="uppercase tracking-widest text-[10px] font-bold">
+            Help Center
+          </span>
+        </Link>
+
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-200/50 transition-all duration-300 rounded-lg"
+        >
+          <Icon name="logout" className="text-[20px]" />
+          <span className="uppercase tracking-widest text-[10px] font-bold">
+            Sign Out
+          </span>
+        </button>
       </div>
     </aside>
   );
@@ -114,6 +131,7 @@ export default function NewEntry() {
     current_balance: "",
     forecast_days: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -128,18 +146,38 @@ export default function NewEntry() {
     setLoading(true);
     setError("");
     setSuccess(false);
+
     try {
-      const res = await fetch("/analyze-transaction", {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("No authentication token found. Please login again.");
+      }
+
+      const payload = {
+        business_id: formData.business_id,
+        user_id: formData.user_id,
+        description: formData.description,
+        amount: Number(formData.amount),
+        balance: Number(formData.current_balance),
+        forecast_days: Number(formData.forecast_days),
+      };
+
+      const res = await fetch("http://localhost:3000/api/transactions/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          amount: Number(formData.amount),
-          current_balance: Number(formData.current_balance),
-          forecast_days: Number(formData.forecast_days),
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Submission failed. Please try again.");
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Submission failed. Please try again.");
+      }
+
       setSuccess(true);
       setFormData({
         business_id: "",
@@ -150,7 +188,7 @@ export default function NewEntry() {
         forecast_days: "",
       });
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -168,12 +206,14 @@ export default function NewEntry() {
         rel="stylesheet"
       />
 
-      <div className="min-h-screen bg-[#f0f2f5]" style={{ fontFamily: "Manrope, sans-serif" }}>
+      <div
+        className="min-h-screen bg-[#f0f2f5]"
+        style={{ fontFamily: "Manrope, sans-serif" }}
+      >
         <Sidebar />
 
         <main className="ml-64 min-h-screen bg-[#f0f2f5] flex items-center justify-center p-12">
           <div className="max-w-3xl w-full">
-
             {/* Header */}
             <div className="mb-10">
               <h2
@@ -183,14 +223,14 @@ export default function NewEntry() {
                 New Transaction Entry
               </h2>
               <p className="text-[#64748b] font-medium mt-2 text-sm">
-                Populate the architectural fields below to analyze your ledger with Aeon AI.
+                Populate the architectural fields below to analyze your ledger
+                with Aeon AI.
               </p>
             </div>
 
             {/* Form Card */}
             <div className="bg-white border border-[#e2e8f0] p-10 md:p-14 shadow-sm">
               <form onSubmit={handleSubmit} className="space-y-8">
-
                 {/* Row 1: business_id + user_id */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-3">
@@ -275,7 +315,9 @@ export default function NewEntry() {
 
                 {/* Error / Success */}
                 {error && (
-                  <p className="text-red-500 text-xs font-semibold tracking-wide">{error}</p>
+                  <p className="text-red-500 text-xs font-semibold tracking-wide">
+                    {error}
+                  </p>
                 )}
                 {success && (
                   <p className="text-green-600 text-xs font-semibold tracking-wide uppercase">
@@ -300,7 +342,9 @@ export default function NewEntry() {
             <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white border border-[#e2e8f0] p-5 flex items-start gap-4">
                 <div className="h-10 w-10 bg-[#005A92]/5 flex items-center justify-center text-[#005A92] shrink-0">
-                  <span className="material-symbols-outlined text-lg">verified_user</span>
+                  <span className="material-symbols-outlined text-lg">
+                    verified_user
+                  </span>
                 </div>
                 <div>
                   <h4
@@ -310,13 +354,16 @@ export default function NewEntry() {
                     Architectural Security
                   </h4>
                   <p className="text-[11px] text-[#64748b] leading-relaxed">
-                    Encrypted entries processed via the proprietary Aeon Ledger model.
+                    Encrypted entries processed via the proprietary Aeon Ledger
+                    model.
                   </p>
                 </div>
               </div>
               <div className="bg-white border border-[#e2e8f0] p-5 flex items-start gap-4">
                 <div className="h-10 w-10 bg-[#005A92]/5 flex items-center justify-center text-[#005A92] shrink-0">
-                  <span className="material-symbols-outlined text-lg">auto_graph</span>
+                  <span className="material-symbols-outlined text-lg">
+                    auto_graph
+                  </span>
                 </div>
                 <div>
                   <h4
@@ -326,12 +373,12 @@ export default function NewEntry() {
                     Precision Analytics
                   </h4>
                   <p className="text-[11px] text-[#64748b] leading-relaxed">
-                    Analysis updates your financial trend immediately upon submission.
+                    Analysis updates your financial trend immediately upon
+                    submission.
                   </p>
                 </div>
               </div>
             </div>
-
           </div>
         </main>
       </div>

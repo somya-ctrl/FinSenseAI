@@ -20,7 +20,7 @@ app.use(express.json());
 const authRoutes = require("./routes/authRoutes");
 const finbotRoutes = require("./routes/finbotRoutes");   
 const overviewRoutes = require("./routes/overviewRoutes");
-const transactionRoutes = require("./src/routes/transactionRoutes");
+const transactionRoutes = require("./routes/transactionRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/finbot", finbotRoutes);                  
 app.use("/api/overview", overviewRoutes);
