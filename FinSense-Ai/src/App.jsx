@@ -5,6 +5,7 @@ import Signup from "./pages/Signup";
 import DashboardPage from "./pages/Dashboardpage";
 import AnalyzeTransaction from "./pages/Analyze";
 import PrecisionLedger from "./pages/Cashflowpred";
+import FinBotAI from "./pages/FinBot";
 export default function App() {
   return (
     <Router>
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path ="/analyze" element ={<AnalyzeTransaction/>}/>
         <Route path="/cashflow" element={<PrecisionLedger/>}/>
+        <Route path="/finbot" element={<FinBotAI/>}/>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

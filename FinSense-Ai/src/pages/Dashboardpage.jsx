@@ -15,7 +15,7 @@ const navItems = [
   { icon: "dashboard", label: "Overview", path: "/dashboard", active: true },
   { icon: "payments", label: "Cash Flow Prediction", path: "/cashflow" },
   { icon: "account_balance", label: "Analyze transaction", path: "/analyze", active: true},
-  { icon: "description", label: "Invoices", path: "#" },
+  { icon: "description", label: "finbot", path: "/finbot" },
   { icon: "bar_chart", label: "Reports", path: "#" },
   { icon: "settings", label: "Settings", path: "#" },
 ];
