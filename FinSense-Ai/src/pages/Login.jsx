@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+
 const GoogleIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -137,11 +138,11 @@ export default function LoginPage() {
       {/* ── Main ── */}
       <main className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-0 px-5 sm:px-8 lg:px-16 py-10 lg:py-0 relative overflow-hidden">
 
-        {/* Decorative blobs — desktop only */}
+        {/* Decorative blobs */}
         <div className="hidden lg:block absolute right-[13%] top-[8%] w-72 h-28 rounded-2xl opacity-30 blur-sm" style={{ background: "linear-gradient(135deg, #c9d6e8, #dde4f0)" }} />
         <div className="hidden lg:block absolute right-[10%] bottom-[12%] w-56 h-20 rounded-2xl opacity-20 blur-sm" style={{ background: "linear-gradient(135deg, #b8c9e0, #cdd8ed)" }} />
 
-        {/* Left — full brand copy on lg+ */}
+        {/* Left — desktop brand copy */}
         <div className="hidden lg:flex flex-1 flex-col max-w-lg pr-10">
           <p className="text-[#1a6bbf] text-xs font-bold uppercase tracking-[0.2em] mb-5 flex items-center gap-2">
             <span className="inline-block w-6 h-px bg-[#1a6bbf]" />
@@ -181,6 +182,7 @@ export default function LoginPage() {
               <p className="text-slate-400 text-sm">Please identify yourself to proceed.</p>
             </div>
 
+            {/* Error Alert */}
             {error && (
               <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
                 <span className="mt-px flex-shrink-0">⚠</span>
@@ -276,26 +278,31 @@ export default function LoginPage() {
                 <div className="flex-1 h-px bg-slate-200" />
               </div>
 
-              <GoogleLogin
-  onSuccess={async (credentialResponse) => {
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/google",
-        {
-          credential: credentialResponse.credential,
-        }
-      );
-
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-
-      window.location.href = "/dashboard";
-    } catch (err) {
-      console.error("Google login failed", err);
-    }
-  }}
-  onError={() => console.log("Login Failed")}
-/>
+              {/* ✅ Fixed Google Login — correct env var + navigate + setError */}
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={async (credentialResponse) => {
+                    try {
+                      const res = await axios.post(
+                        `${API_BASE}/auth/google`,
+                        { credential: credentialResponse.credential }
+                      );
+                      if (res.data.token) {
+                        localStorage.setItem("token", res.data.token);
+                      }
+                      if (res.data.user) {
+                        localStorage.setItem("user", JSON.stringify(res.data.user));
+                      }
+                      navigate("/dashboard");
+                    } catch (err) {
+                      console.error("Google login failed", err);
+                      setError("Google login failed. Please try again.");
+                    }
+                  }}
+                  onError={() => setError("Google login failed. Please try again.")}
+                  width="100%"
+                />
+              </div>
 
               <p className="text-center text-slate-400 text-sm">
                 No credentials yet?{" "}
