@@ -157,8 +157,26 @@ const googleAuthService = async ({ credential }) => {
   };
 };
 
+
+const logoutService = async (user) => {
+  try {
+    return {
+      success: true,
+      message: "Logged out successfully",
+      data: {
+        userId: user.id || user._id || null,
+        email: user.email || null,
+      },
+    };
+  } catch (error) {
+    throw new Error("Logout failed");
+  }
+};
+
+
 module.exports = {
   signupService,
   loginService,
   googleAuthService,
+  logoutService
 };

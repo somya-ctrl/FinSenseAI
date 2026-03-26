@@ -2,6 +2,7 @@ const {
   signupService,
   loginService,
   googleAuthService,
+  logoutService
 } = require("../services/authService");
 
 // ==========================
@@ -66,8 +67,27 @@ const googleAuth = async (req, res) => {
   }
 };
 
+
+const logout = async (req, res) => {
+  try {
+    const user = req.user;
+
+    const response = await logoutService(user);
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("Logout Controller Error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
 module.exports = {
   signup,
   login,
   googleAuth,
+  logout
 };
