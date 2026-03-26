@@ -19,10 +19,10 @@ app.use(express.json());
 // Routes
 const authRoutes = require("./routes/authRoutes");
 const finbotRoutes = require("./routes/finbotRoutes");   
-
+const overviewRoutes = require("./routes/overviewRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/finbot", finbotRoutes);                  
-
+app.use("/api/overview", overviewRoutes);
 // Test Route
 app.get("/", (req, res) => {
   res.send("API is running...");

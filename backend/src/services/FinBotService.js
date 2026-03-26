@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const FINBOT_BASE_URL = process.env.FINBOT_BASE_URL || "http://140.40.0.12:5000";
+const FINBOT_BASE_URL = process.env.FINBOT_BASE_URL || "https://elanor-uncompulsive-easton.ngrok-free.dev";
 
 // ── Chat with FinBot ─────────────────────────────────────────
 const sendMessage = async (business_id, message, reset = false) => {
