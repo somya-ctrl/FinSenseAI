@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
-
+import { useNavigate } from "react-router-dom";
 const API_BASE_URL = "http://localhost:3000/api";
 
 // ── Fonts & Icons ─────────────────────────────────────────────────────────────
@@ -17,11 +17,11 @@ const Icon = ({ name, className = "", filled = false }) => (
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 const navItems = [
   { icon: "dashboard",        label: "Overview",             path: "/dashboard", active: true },
-  { icon: "payments",         label: "Cash Flow Prediction", path: "/cashflow" },
+  { icon: "payments",         label: "Cash Flow Prediction", path: "/cash-flow" },
   { icon: "account_balance",  label: "Analyze Transaction",  path: "/analyze" },
   { icon: "description",      label: "FinBot",               path: "/finbot" },
-  { icon: "bar_chart",        label: "Reports",              path: "#" },
-  { icon: "settings",         label: "Settings",             path: "#" },
+  { icon: "bar_chart",        label: "Reports",              path: "/reports" },
+  { icon: "settings",         label: "Settings",             path: "/settings"},
 ];
 
 function Sidebar() {
@@ -57,12 +57,13 @@ function Sidebar() {
       </nav>
 
       <div className="mt-auto pt-6 space-y-1">
-        <button
-          className="w-full mb-6 text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-transform"
+        <Link
+          to="/new-entry"
+          className="w-full mb-6 text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-transform flex items-center justify-center"
           style={{ background: "linear-gradient(135deg, #00426d, #005a92)" }}
         >
           New Entry
-        </button>
+        </Link>
         {[
           { icon: "help_outline", label: "Help Center" },
           { icon: "logout",       label: "Sign Out" },

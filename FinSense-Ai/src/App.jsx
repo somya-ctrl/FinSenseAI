@@ -6,6 +6,8 @@ import DashboardPage from "./pages/Dashboardpage";
 import AnalyzeTransaction from "./pages/Analyze";
 import PrecisionLedger from "./pages/Cashflowpred";
 import FinBotAI from "./pages/FinBot";
+import NewEntry from "./pages/Newentry";
+
 export default function App() {
   return (
     <Router>
@@ -14,12 +16,16 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path ="/analyze" element ={<AnalyzeTransaction/>}/>
-        <Route path="/cashflow" element={<PrecisionLedger/>}/>
-        <Route path="/finbot" element={<FinBotAI/>}/>
+        <Route path="/analyze" element={<AnalyzeTransaction />} />
+        <Route path="/cash-flow" element={<PrecisionLedger />} />
+        <Route path="/finbot" element={<FinBotAI />} />
+        <Route path="/new-entry" element={<NewEntry />} />
+        <Route path="/reports" element={<DashboardPage />} />
+        <Route path="/settings" element={<DashboardPage />} />
+        <Route path="/help" element={<LandingPage />} />
+        <Route path="/signout" element={<LandingPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
-
 }
