@@ -1,60 +1,50 @@
-const finbotService = require("../services/FinBotService");
+const { sendMessage, resetChatHistory } = require("../services/FinBotService");
 
-// ── POST /api/chat ───────────────────────────────────────────
-const chat = async (req, res) => {
+// ── Send Message ─────────────────────────────────────────────
+const chatWithBot = async (req, res) => {
   try {
-    const { business_id, message, reset } = req.body;
+    const { user_id, business_id, message, reset = false } = req.body;
 
-    if (!business_id || !message) {
+    if (!user_id || !business_id || !message) {
       return res.status(400).json({
-        success: false,
-        error: "business_id and message are required",
+        message: "user_id, business_id, and message are required",
       });
     }
 
-    const data = await finbotService.sendMessage(business_id, message, reset);
+    const data = await sendMessage(user_id, business_id, message, reset);
 
-    return res.status(200).json({
-      success: true,
-      reply: data.reply,
-      business_id,
-    });
-
+    res.status(200).json(data);
   } catch (error) {
-    console.error("FinBot chat error:", error.message);
-    return res.status(500).json({
-      success: false,
-      error: error.message,
+    console.error("❌ chatWithBot error:", error.message);
+    res.status(500).json({
+      message: error.message || "Failed to chat with FinBot",
     });
   }
 };
 
-// ── POST /api/chat/reset ─────────────────────────────────────
-const resetChat = async (req, res) => {
+// ── Reset Chat ───────────────────────────────────────────────
+const resetBotChat = async (req, res) => {
   try {
-    const { business_id } = req.body;
+    const { user_id, business_id } = req.body;
 
-    if (!business_id) {
+    if (!user_id || !business_id) {
       return res.status(400).json({
-        success: false,
-        error: "business_id is required",
+        message: "user_id and business_id are required",
       });
     }
 
-    const data = await finbotService.resetChatHistory(business_id);
+    const data = await resetChatHistory(user_id, business_id);
 
-    return res.status(200).json({
-      success: true,
-      message: data.message || `Chat history cleared for ${business_id}`,
-    });
-
+    res.status(200).json(data);
   } catch (error) {
-    console.error("FinBot reset error:", error.message);
-    return res.status(500).json({
-      success: false,
-      error: error.message,
+    console.error("❌ resetBotChat error:", error.message);
+    res.status(500).json({
+      message: error.message || "Failed to reset FinBot chat",
     });
   }
 };
 
-module.exports = { chat, resetChat };
+module.exports = {
+  chatWithBot,
+  resetBotChat,
+};
