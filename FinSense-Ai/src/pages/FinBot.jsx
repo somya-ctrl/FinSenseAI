@@ -302,7 +302,7 @@ export default function FinBotAI() {
           id: Date.now() + 1,
           role: "bot",
           icon: "auto_awesome",
-          content: <p>{reply}</p>,
+          content: <ReactMarkdown>{reply}</ReactMarkdown>,
         },
       ]);
     } catch (error) {
