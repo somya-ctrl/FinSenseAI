@@ -12,9 +12,24 @@ const GoogleIcon = () => (
   </svg>
 );
 
+// const MailIcon = () => (
+//   <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+//     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+//   </svg>
+// );
 const MailIcon = () => (
-  <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+  <svg
+    className="w-4 h-4 block"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="#94a3b8"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.5}
+      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+    />
   </svg>
 );
 
@@ -284,7 +299,7 @@ export default function LoginPage() {
                   onSuccess={async (credentialResponse) => {
                     try {
                       const res = await axios.post(
-                        `${API_BASE}/google`,
+                        `${API_BASE}/auth/google`,
                         { credential: credentialResponse.credential }
                       );
                       if (res.data.token) {
