@@ -23,12 +23,14 @@ const overviewRoutes = require("./routes/overviewRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
 const analyzeRoutes = require("./routes/analyzeRoutes");
 const businessRoutes = require("./routes/businessRoutes");
+const cashflowRoutes = require("./routes/cashflowRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/finbot", finbotRoutes);                  
 app.use("/api/overview", overviewRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/analyze", analyzeRoutes);
 app.use("/api/business",businessRoutes);
+app.use("/api/cashflow",cashflowRoutes);
 
 // Test Route
 app.get("/", (req, res) => {
