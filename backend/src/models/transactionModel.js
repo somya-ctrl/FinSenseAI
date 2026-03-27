@@ -1,5 +1,3 @@
-// src/models/transactionModel.js
-
 const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
@@ -28,6 +26,15 @@ const transactionSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    business_type: {
+      type: String,
+      required: true,
+    },
+    monthly_revenue: {
+      type: Number,
+      required: true,
+    },
+    
   },
   { timestamps: true }
 );

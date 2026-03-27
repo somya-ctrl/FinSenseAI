@@ -1,5 +1,3 @@
-// src/services/transactionService.js
-
 const Transaction = require("../models/transactionModel");
 
 const createTransactionService = async (data) => {
@@ -11,6 +9,8 @@ const createTransactionService = async (data) => {
       amount,
       balance,
       forecast_days,
+      business_type,
+      monthly_revenue,
     } = data;
 
     // Basic validation
@@ -20,7 +20,9 @@ const createTransactionService = async (data) => {
       !description ||
       !amount ||
       !balance ||
-      !forecast_days
+      !forecast_days ||
+      !business_type ||
+      !monthly_revenue
     ) {
       throw new Error("All fields are required");
     }
@@ -32,6 +34,8 @@ const createTransactionService = async (data) => {
       amount,
       balance,
       forecast_days,
+      business_type,
+      monthly_revenue,
     });
 
     return {
