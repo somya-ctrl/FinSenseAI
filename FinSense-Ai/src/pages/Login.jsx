@@ -284,7 +284,7 @@ export default function LoginPage() {
                   onSuccess={async (credentialResponse) => {
                     try {
                       const res = await axios.post(
-                        `${API_BASE}/auth/google`,
+                        `${API_BASE}/google`,
                         { credential: credentialResponse.credential }
                       );
                       if (res.data.token) {
