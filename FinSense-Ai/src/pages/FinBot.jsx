@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
-
+import ReactMarkdown from "react-markdown"
 const API_BASE_URL = "http://localhost:3000/api"; // ✅ backend URL
 const user = JSON.parse(localStorage.getItem("user") || "{}");
 const BUSINESS_ID = localStorage.getItem("business_id") || "BIZ_001";
