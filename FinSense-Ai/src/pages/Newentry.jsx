@@ -157,7 +157,6 @@ function Topbar({ onMenuClick, userName }) {
   );
 }
 
-// ── Shared field label ────────────────────────────────────────────────────────
 function FieldLabel({ children, required }) {
   return (
     <label className="text-[11px] font-bold text-slate-900 uppercase tracking-widest flex items-center gap-1">
@@ -167,8 +166,7 @@ function FieldLabel({ children, required }) {
   );
 }
 
-// ── Shared input ──────────────────────────────────────────────────────────────
-function TextInput({ name, value, onChange, placeholder, type = "text", prefix, readOnly = false, error }) {
+function TextInput({ name, value, onChange, placeholder, type = "text", prefix, error }) {
   return (
     <div className="relative">
       {prefix && (
@@ -182,13 +180,10 @@ function TextInput({ name, value, onChange, placeholder, type = "text", prefix, 
         onChange={onChange}
         type={type}
         placeholder={placeholder}
-        readOnly={readOnly}
         className={[
           "w-full border rounded-md px-5 py-4 font-medium text-sm outline-none transition-all",
           prefix ? "pl-9" : "",
-          readOnly
-            ? "bg-white border-slate-100 text-slate-400 cursor-default"
-            : error
+          error
             ? "border-red-300 bg-red-50 text-slate-800 focus:ring-1 focus:ring-red-400"
             : "border-slate-200 text-slate-700 bg-white focus:ring-1 focus:ring-[#005183] focus:border-[#005183] hover:border-slate-300",
         ].join(" ")}
@@ -198,7 +193,6 @@ function TextInput({ name, value, onChange, placeholder, type = "text", prefix, 
   );
 }
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({ message, type, onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 4000);
@@ -222,7 +216,6 @@ function Toast({ message, type, onClose }) {
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 export default function NewEntry() {
   useMaterialSymbols();
 
@@ -237,8 +230,8 @@ export default function NewEntry() {
   })();
 
   const [form, setForm] = useState({
-    business_name:   storedUser.business_name  || "",
-    business_id:     storedUser.business_id    || localStorage.getItem("businessId") || "",
+    business_name:   storedUser.business_name || "",
+    business_id:     storedUser.business_id   || localStorage.getItem("businessId") || "",
     user_id:         storedUser.user_id        || localStorage.getItem("userId")     || "",
     description:     "",
     amount:          "",
@@ -257,9 +250,10 @@ export default function NewEntry() {
 
   const validate = () => {
     const errors = {};
-    if (!form.business_id.trim())  errors.business_id    = "Business ID is required";
-    if (!form.user_id.trim())      errors.user_id        = "User ID is required";
-    if (!form.description.trim())  errors.description    = "Description is required";
+    if (!form.business_name.trim()) errors.business_name  = "Business name is required";
+    if (!form.business_id.trim())   errors.business_id    = "Business ID is required";
+    if (!form.user_id.trim())       errors.user_id        = "User ID is required";
+    if (!form.description.trim())   errors.description    = "Description is required";
     if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0)
       errors.amount = "Enter a valid amount";
     if (!form.balance || isNaN(Number(form.balance)))
@@ -280,11 +274,13 @@ export default function NewEntry() {
     setFieldErrors({});
 
     const payload = {
+      business_name:   form.business_name.trim(),
       business_id:     form.business_id.trim(),
       user_id:         form.user_id.trim(),
       description:     form.description.trim(),
       amount:          Number(form.amount),
       balance:         Number(form.balance),
+      category:        form.category.trim(),
       forecast_days:   Number(form.forecast_days),
       business_type:   form.business_type,
       monthly_revenue: Number(form.monthly_revenue),
@@ -306,15 +302,25 @@ export default function NewEntry() {
       try { data = JSON.parse(rawText); } catch { throw new Error("Server returned invalid JSON"); }
       if (!res.ok) throw new Error(data?.message || data?.detail || `Request failed (${res.status})`);
 
+      // Save IDs to localStorage for FinBot and other features
       localStorage.setItem("businessId", form.business_id.trim());
       localStorage.setItem("userId",     form.user_id.trim());
 
       setToast({ message: "Transaction created successfully!", type: "success" });
-      setForm((prev) => ({
-        ...prev,
-        description: "", amount: "", balance: "",
-        category: "", forecast_days: "7", monthly_revenue: "",
-      }));
+
+      // Reset all fields after save
+      setForm({
+        business_name:   "",
+        business_id:     "",
+        user_id:         "",
+        description:     "",
+        amount:          "",
+        balance:         "",
+        category:        "",
+        forecast_days:   "7",
+        business_type:   "SaaS",
+        monthly_revenue: "",
+      });
     } catch (err) {
       setToast({ message: err.message || "Failed to create transaction.", type: "error" });
     } finally {
@@ -322,7 +328,7 @@ export default function NewEntry() {
     }
   };
 
-  const isFormDirty = form.description || form.amount || form.balance || form.monthly_revenue;
+  const isFormDirty = Object.values(form).some((v) => v !== "" && v !== "7" && v !== "SaaS");
 
   return (
     <div className="min-h-screen bg-[#f0f2f5]" style={{ fontFamily: "Manrope, sans-serif" }}>
@@ -340,45 +346,43 @@ export default function NewEntry() {
               <form onSubmit={handleSubmit} noValidate>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
 
-                  {/* Business Name — read only from account */}
+                  {/* Business Name */}
                   <div className="space-y-3">
-                    <FieldLabel>Business Name</FieldLabel>
+                    <FieldLabel required>Business Name</FieldLabel>
                     <TextInput
                       name="business_name"
                       value={form.business_name}
                       onChange={handleChange}
                       placeholder="e.g. Acme Corp"
-                      readOnly
+                      error={fieldErrors.business_name}
                     />
                   </div>
 
-                  {/* Business ID — read only */}
+                  {/* Business ID */}
                   <div className="space-y-3">
-                    <FieldLabel>Business ID</FieldLabel>
+                    <FieldLabel required>Business ID</FieldLabel>
                     <TextInput
                       name="business_id"
                       value={form.business_id}
                       onChange={handleChange}
                       placeholder="e.g. BIZ_001"
-                      readOnly
                       error={fieldErrors.business_id}
                     />
                   </div>
 
-                  {/* User ID — read only */}
+                  {/* User ID */}
                   <div className="space-y-3">
-                    <FieldLabel>User ID</FieldLabel>
+                    <FieldLabel required>User ID</FieldLabel>
                     <TextInput
                       name="user_id"
                       value={form.user_id}
                       onChange={handleChange}
                       placeholder="e.g. U001"
-                      readOnly
                       error={fieldErrors.user_id}
                     />
                   </div>
 
-                  {/* Description — full width, editable */}
+                  {/* Description — full width */}
                   <div className="md:col-span-2 space-y-3">
                     <FieldLabel required>Description</FieldLabel>
                     <input
@@ -523,11 +527,12 @@ export default function NewEntry() {
                     <button
                       type="button"
                       onClick={() =>
-                        setForm((prev) => ({
-                          ...prev,
+                        setForm({
+                          business_name: "", business_id: "", user_id: "",
                           description: "", amount: "", balance: "",
-                          category: "", forecast_days: "7", monthly_revenue: "",
-                        }))
+                          category: "", forecast_days: "7",
+                          business_type: "SaaS", monthly_revenue: "",
+                        })
                       }
                       className="w-full sm:w-auto px-8 py-5 border border-slate-200 rounded-md text-slate-500 hover:text-slate-700 hover:border-slate-300 font-bold text-sm tracking-widest uppercase transition-all"
                     >

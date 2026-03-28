@@ -4,12 +4,10 @@ const https = require("https");
 const FINBOT_BASE_URL =
   process.env.FINBOT_BASE_URL || "https://finsense-project.onrender.com";
 
-// Reuse HTTPS agent
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
 });
 
-// ── Common Axios Config ──────────────────────────────────────
 const axiosConfig = {
   httpsAgent,
   headers: {
