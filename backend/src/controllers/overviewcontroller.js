@@ -13,9 +13,22 @@ const getBusinessSummary = async (req, res) => {
 
     const data = await overviewService.getBusinessSummary(business_id);
 
+    
+
+    // 🔥 Convert top_categories array into category_breakdown object
+    const category_breakdown = {};
+    if (Array.isArray(data.top_categories)) {
+      data.top_categories.forEach((item) => {
+        category_breakdown[item.category] = item.amount;
+      });
+    }
+
     return res.status(200).json({
       success: true,
-      data,
+      data: {
+        ...data,
+        category_breakdown, // ✅ frontend needs this
+      },
     });
 
   } catch (error) {

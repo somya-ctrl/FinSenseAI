@@ -1,50 +1,64 @@
-const { sendMessage, resetChatHistory } = require("../services/FinBotService");
+const { sendMessage } = require("../services/finbotService");
 
-// ── Send Message ─────────────────────────────────────────────
+// Example models (adjust according to your project)
+const User = require("../models/User");
+const Transaction = require("../models/transactionModel");
+
 const chatWithBot = async (req, res) => {
   try {
-    const { user_id, business_id, message, reset = false } = req.body;
+    const { user_id, business_id, message } = req.body;
 
     if (!user_id || !business_id || !message) {
       return res.status(400).json({
+        success: false,
         message: "user_id, business_id, and message are required",
       });
     }
 
-    const data = await sendMessage(user_id, business_id, message, reset);
+    // ── Fetch business profile info ─────────────────────────
+    // Change this according to where your business info is stored
+    const user = await User.findOne({ user_id, business_id });
 
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("❌ chatWithBot error:", error.message);
-    res.status(500).json({
-      message: error.message || "Failed to chat with FinBot",
-    });
-  }
-};
+    let business_type = user?.business_type || null;
+    let monthly_revenue = user?.monthly_revenue || null;
+    let business_name = user?.business_name || null;
+    let category = user?.category || null;
 
-// ── Reset Chat ───────────────────────────────────────────────
-const resetBotChat = async (req, res) => {
-  try {
-    const { user_id, business_id } = req.body;
-
-    if (!user_id || !business_id) {
-      return res.status(400).json({
-        message: "user_id and business_id are required",
+    // Optional fallback: calculate revenue from transactions
+    if (!monthly_revenue) {
+      const incomeTransactions = await Transaction.find({
+        business_id,
+        amount: { $gt: 0 },
       });
+
+      monthly_revenue = incomeTransactions.reduce(
+        (sum, tx) => sum + Number(tx.amount || 0),
+        0
+      );
     }
 
-    const data = await resetChatHistory(user_id, business_id);
+    // ── Send enriched payload to ML API ─────────────────────
+    const result = await sendMessage({
+      user_id,
+      business_id,
+      message,
+      business_type,
+      monthly_revenue,
+      business_name,
+      category,
+    });
 
-    res.status(200).json(data);
+    return res.status(200).json(result);
   } catch (error) {
-    console.error("❌ resetBotChat error:", error.message);
-    res.status(500).json({
-      message: error.message || "Failed to reset FinBot chat",
+    console.error("❌ chatWithBot error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to send message to FinBot API",
     });
   }
 };
 
 module.exports = {
   chatWithBot,
-  resetBotChat,
 };

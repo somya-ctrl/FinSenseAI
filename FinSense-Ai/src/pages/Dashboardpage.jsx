@@ -3,9 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Sidebar, { Icon } from "./Sidebar";
-
-const API_BASE_URL = "http://localhost:3000/api";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatCurrency = (amount) => {
   if (amount === undefined || amount === null || isNaN(amount)) return "₹0";
@@ -14,6 +12,19 @@ const formatCurrency = (amount) => {
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(amount);
+};
+const EMPTY_SUMMARY = {
+  total_income: 0,
+  total_expense: 0,
+  net_balance: 0,
+  profit_margin: 0,
+  savings_rate_pct: 0,
+  category_breakdown: {},
+  recommendation: "Fetch a Business ID to see AI insights.",
+  financial_health: "neutral",
+  summary: "No business data loaded yet.",
+  anomalies: [],
+  total_transactions: 0,
 };
 
 // ── Skeleton Components ───────────────────────────────────────────────────────
@@ -114,18 +125,71 @@ function StatCard({ label, value, trend, trendUp, trendColor, bg, sparkBars, act
 }
 
 // ── Income vs Expense Chart ───────────────────────────────────────────────────
+// function IncomeVsExpenseChart({ totalIncome, totalExpense, isLoading }) {
+//   const maxValue = Math.max(totalIncome || 0, totalExpense || 0);
+//   const incomeHeight  = maxValue > 0 ? ((totalIncome  || 0) / maxValue) * 100 : 0;
+//   const expenseHeight = maxValue > 0 ? ((totalExpense || 0) / maxValue) * 100 : 0;
+
+//   return (
+//     <div className="col-span-2 bg-white p-8 rounded-xl" style={{ boxShadow: "0 40px 40px -20px rgba(25,28,30,0.06)" }}>
+//       <div className="flex justify-between items-center mb-8">
+//         <div>
+//           <h3 className="text-lg font-bold text-[#191c1e]" style={{ fontFamily: "Manrope, sans-serif" }}>Income vs Expenses</h3>
+//           <p className="text-xs text-slate-400">Monthly comparison</p>
+//         </div>
+//         <div className="flex gap-4">
+//           <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#00426d]">
+//             <span className="w-2 h-2 rounded-full bg-[#00426d] inline-block" /> Income
+//           </span>
+//           <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-500">
+//             <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Expense
+//           </span>
+//         </div>
+//       </div>
+//       <div className="h-64 relative flex items-end justify-around px-4 pb-8">
+//         <div className="relative w-24 flex flex-col items-center">
+//           {isLoading ? <SkeletonBar /> : (
+//             <>
+//               <div className="w-full rounded-t-lg bg-[#00426d] transition-all duration-500" style={{ height: `${incomeHeight}%` }} />
+//               <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase text-[#00426d]">Income</span>
+//               <span className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">{formatCurrency(totalIncome)}</span>
+//             </>
+//           )}
+//         </div>
+//         <div className="relative w-24 flex flex-col items-center">
+//           {isLoading ? <SkeletonBar /> : (
+//             <>
+//               <div className="w-full rounded-t-lg bg-red-500 transition-all duration-500" style={{ height: `${expenseHeight}%` }} />
+//               <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase text-red-500">Expense</span>
+//               <span className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">{formatCurrency(totalExpense)}</span>
+//             </>
+//           )}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 function IncomeVsExpenseChart({ totalIncome, totalExpense, isLoading }) {
-  const maxValue = Math.max(totalIncome || 0, totalExpense || 0);
-  const incomeHeight  = maxValue > 0 ? ((totalIncome  || 0) / maxValue) * 100 : 0;
-  const expenseHeight = maxValue > 0 ? ((totalExpense || 0) / maxValue) * 100 : 0;
+  const maxValue = Math.max(totalIncome || 0, totalExpense || 0, 1);
+  const incomeHeight = ((totalIncome || 0) / maxValue) * 180;
+  const expenseHeight = ((totalExpense || 0) / maxValue) * 180;
 
   return (
-    <div className="col-span-2 bg-white p-8 rounded-xl" style={{ boxShadow: "0 40px 40px -20px rgba(25,28,30,0.06)" }}>
+    <div
+      className="col-span-2 bg-white p-8 rounded-xl"
+      style={{ boxShadow: "0 40px 40px -20px rgba(25,28,30,0.06)" }}
+    >
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h3 className="text-lg font-bold text-[#191c1e]" style={{ fontFamily: "Manrope, sans-serif" }}>Income vs Expenses</h3>
+          <h3
+            className="text-lg font-bold text-[#191c1e]"
+            style={{ fontFamily: "Manrope, sans-serif" }}
+          >
+            Income vs Expenses
+          </h3>
           <p className="text-xs text-slate-400">Monthly comparison</p>
         </div>
+
         <div className="flex gap-4">
           <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#00426d]">
             <span className="w-2 h-2 rounded-full bg-[#00426d] inline-block" /> Income
@@ -135,30 +199,49 @@ function IncomeVsExpenseChart({ totalIncome, totalExpense, isLoading }) {
           </span>
         </div>
       </div>
-      <div className="h-64 relative flex items-end justify-around px-4 pb-8">
-        <div className="relative w-24 flex flex-col items-center">
-          {isLoading ? <SkeletonBar /> : (
-            <>
-              <div className="w-full rounded-t-lg bg-[#00426d] transition-all duration-500" style={{ height: `${incomeHeight}%` }} />
-              <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase text-[#00426d]">Income</span>
-              <span className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">{formatCurrency(totalIncome)}</span>
-            </>
-          )}
-        </div>
-        <div className="relative w-24 flex flex-col items-center">
-          {isLoading ? <SkeletonBar /> : (
-            <>
-              <div className="w-full rounded-t-lg bg-red-500 transition-all duration-500" style={{ height: `${expenseHeight}%` }} />
-              <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase text-red-500">Expense</span>
-              <span className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">{formatCurrency(totalExpense)}</span>
-            </>
-          )}
-        </div>
+
+      {/* Chart area */}
+      <div className="h-[260px] flex items-end justify-center gap-24 border-b border-slate-200 pb-6 relative">
+        {isLoading ? (
+          <>
+            <div className="w-24 h-40 bg-slate-200 rounded-t-lg animate-pulse" />
+            <div className="w-24 h-28 bg-slate-200 rounded-t-lg animate-pulse" />
+          </>
+        ) : (
+          <>
+            {/* Income Bar */}
+            <div className="flex flex-col items-center justify-end h-full">
+              <div className="text-xs font-bold text-[#00426d] mb-2">
+                {formatCurrency(totalIncome)}
+              </div>
+              <div
+                className="w-24 rounded-t-xl bg-[#00426d] transition-all duration-700"
+                style={{ height: `${incomeHeight}px`, minHeight: "16px" }}
+              />
+              <span className="mt-3 text-[11px] font-bold uppercase tracking-wider text-[#00426d]">
+                Income
+              </span>
+            </div>
+
+            {/* Expense Bar */}
+            <div className="flex flex-col items-center justify-end h-full">
+              <div className="text-xs font-bold text-red-500 mb-2">
+                {formatCurrency(totalExpense)}
+              </div>
+              <div
+                className="w-24 rounded-t-xl bg-red-500 transition-all duration-700"
+                style={{ height: `${expenseHeight}px`, minHeight: "16px" }}
+              />
+              <span className="mt-3 text-[11px] font-bold uppercase tracking-wider text-red-500">
+                Expense
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
-
 // ── Key Metrics Cards ─────────────────────────────────────────────────────────
 function KeyMetricsCards({ netBalance, profitMargin, savingsRate, isLoading }) {
   const metrics = [
@@ -349,7 +432,7 @@ function RecentActivity({ totalTransactions, anomalyCount, isLoading }) {
 
 // ── Dashboard Page ────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const [summary,        setSummary]        = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState("");
   const [fetchedId,      setFetchedId]      = useState("");
@@ -358,13 +441,13 @@ export default function DashboardPage() {
   const handleFetch = async (id) => {
     setLoading(true);
     setError("");
-    setSummary(null);
+    // setSummary(null);
     setFetchedId(id);
     try {
       const res = await axios.get(`${API_BASE_URL}/overview/summary/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-      setSummary(res.data.data);
+      setDashboardData(res.data.data);
     } catch (err) {
       setError(err.response?.data?.error || "Business ID not found. Please try again.");
     } finally {
@@ -397,13 +480,13 @@ export default function DashboardPage() {
               Business Overview
             </h2>
           </div>
-          {summary && !loading && (
+          {dashboardData && !loading && (
             <div className="bg-slate-50 px-6 py-3 flex items-center gap-3 rounded-xl border-l-4 border-[#006a6a]">
               <Icon name="auto_awesome" className="text-[#006a6a]" filled />
               <div>
                 <p className="text-[10px] uppercase tracking-wider font-bold text-slate-500">AI Financial Advisor</p>
                 <p className="text-sm font-semibold text-[#191c1e]">
-                  {summary?.recommendation || "Cash flow looks optimal for Q4 reinvestment."}
+                  {(dashboardData || EMPTY_SUMMARY)?.recommendation || "Cash flow looks optimal for Q4 reinvestment."}
                 </p>
               </div>
             </div>
@@ -425,10 +508,10 @@ export default function DashboardPage() {
           <section className="col-span-12 lg:col-span-8 grid grid-cols-2 gap-8">
             <StatCard
               label="Total Revenue (MTD)"
-              value={loading || !summary ? "—" : formatCurrency(summary.total_income)}
-              trend={`${Math.abs(summary?.savings_rate_pct ?? 0)}%`}
-              trendUp={(summary?.savings_rate_pct ?? 0) >= 0}
-              trendColor={(summary?.savings_rate_pct ?? 0) >= 0 ? "text-[#006a6a]" : "text-red-500"}
+              value={loading || !dashboardData ? "—" : formatCurrency((dashboardData || EMPTY_SUMMARY).total_income)}
+              trend={`${Math.abs((dashboardData || EMPTY_SUMMARY)?.savings_rate_pct ?? 0)}%`}
+              trendUp={((dashboardData || EMPTY_SUMMARY)?.savings_rate_pct ?? 0) >= 0}
+              trendColor={((dashboardData || EMPTY_SUMMARY)?.savings_rate_pct ?? 0) >= 0 ? "text-[#006a6a]" : "text-red-500"}
               bg="bg-white"
               sparkBars={[40, 60, 50, 80, 70, 100]}
               activeColor="bg-[#00426d]"
@@ -437,42 +520,42 @@ export default function DashboardPage() {
             />
             <StatCard
               label="Total Expenses (MTD)"
-              value={loading || !summary ? "—" : formatCurrency(summary.total_expense)}
-              trend={`${Math.abs(summary?.savings_rate_pct ?? 0)}%`}
-              trendUp={(summary?.savings_rate_pct ?? 0) < 0}
-              trendColor={(summary?.savings_rate_pct ?? 0) < 0 ? "text-red-500" : "text-[#006a6a]"}
+              value={loading || !dashboardData ? "—" : formatCurrency((dashboardData || EMPTY_SUMMARY).total_expense)}
+              trend={`${Math.abs((dashboardData || EMPTY_SUMMARY)?.savings_rate_pct ?? 0)}%`}
+              trendUp={((dashboardData || EMPTY_SUMMARY)?.savings_rate_pct ?? 0) < 0}
+              trendColor={((dashboardData || EMPTY_SUMMARY)?.savings_rate_pct ?? 0) < 0 ? "text-red-500" : "text-[#006a6a]"}
               bg="bg-slate-50"
               sparkBars={[30, 45, 35, 20, 55, 65]}
               activeColor="bg-slate-500"
               inactiveColor="bg-slate-300"
               isLoading={loading}
             />
-            <IncomeVsExpenseChart totalIncome={summary?.total_income} totalExpense={summary?.total_expense} isLoading={loading} />
-            <KeyMetricsCards netBalance={summary?.net_balance} profitMargin={summary?.profit_margin} savingsRate={summary?.savings_rate_pct} isLoading={loading} />
-            <TopExpenseCategories categoryBreakdown={summary?.category_breakdown} totalExpense={summary?.total_expense} isLoading={loading} />
-            <CategoryBreakdown categoryBreakdown={summary?.category_breakdown} totalExpense={summary?.total_expense} isLoading={loading} />
+            <IncomeVsExpenseChart totalIncome={dashboardData?.total_income} totalExpense={dashboardData?.total_expense} isLoading={loading} />
+            <KeyMetricsCards netBalance={(dashboardData || EMPTY_SUMMARY)?.net_balance} profitMargin={(dashboardData || EMPTY_SUMMARY)?.profit_margin} savingsRate={(dashboardData || EMPTY_SUMMARY)?.savings_rate_pct} isLoading={loading} />
+            <TopExpenseCategories categoryBreakdown={(dashboardData || EMPTY_SUMMARY)?.category_breakdown} totalExpense={(dashboardData || EMPTY_SUMMARY)?.total_expense} isLoading={loading} />
+            <CategoryBreakdown categoryBreakdown={(dashboardData || EMPTY_SUMMARY)?.category_breakdown} totalExpense={(dashboardData || EMPTY_SUMMARY)?.total_expense} isLoading={loading} />
           </section>
 
           <aside className="col-span-12 lg:col-span-4 space-y-8">
             <AIInsights
-              summaryText={summary?.summary}
-              recommendation={summary?.recommendation}
-              financialHealth={summary?.financial_health}
-              profitMargin={summary?.profit_margin}
-              anomalies={summary?.anomalies}
+              summaryText={(dashboardData || EMPTY_SUMMARY)?.summary}
+              recommendation={(dashboardData || EMPTY_SUMMARY)?.recommendation}
+              financialHealth={(dashboardData || EMPTY_SUMMARY)?.financial_health}
+              profitMargin={(dashboardData || EMPTY_SUMMARY)?.profit_margin}
+              anomalies={(dashboardData || EMPTY_SUMMARY)?.anomalies}
               isLoading={loading}
             />
-            <RecentActivity totalTransactions={summary?.total_transactions} anomalyCount={summary?.anomalies?.length} isLoading={loading} />
+            <RecentActivity totalTransactions={(dashboardData || EMPTY_SUMMARY)?.total_transactions} anomalyCount={(dashboardData || EMPTY_SUMMARY)?.anomalies?.length} isLoading={loading} />
           </aside>
         </div>
 
         {/* Footer */}
-        {summary && !loading && (
+        {dashboardData && !loading && (
           <footer className="mt-20 border-t border-slate-200/50 pt-8 flex justify-between items-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
             <div className="flex gap-12">
-              <span>Net Balance: <span className={(summary.net_balance ?? 0) >= 0 ? "text-[#006a6a] ml-2" : "text-red-500 ml-2"}>{formatCurrency(summary.net_balance)}</span></span>
-              <span>Savings Rate: <span className={(summary.savings_rate_pct ?? 0) >= 0 ? "text-[#006a6a] ml-2" : "text-red-500 ml-2"}>{summary.savings_rate_pct}%</span></span>
-              <span>Financial Health: <span className="text-[#191c1e] ml-2 capitalize">{summary.financial_health}</span></span>
+              <span>Net Balance: <span className={((dashboardData || EMPTY_SUMMARY).net_balance ?? 0) >= 0 ? "text-[#006a6a] ml-2" : "text-red-500 ml-2"}>{formatCurrency((dashboardData || EMPTY_SUMMARY).net_balance)}</span></span>
+              <span>Savings Rate: <span className={((dashboardData || EMPTY_SUMMARY).savings_rate_pct ?? 0) >= 0 ? "text-[#006a6a] ml-2" : "text-red-500 ml-2"}>{((dashboardData || EMPTY_SUMMARY).savings_rate_pct ?? 0)}%</span></span>
+              <span>Financial Health: <span className="text-[#191c1e] ml-2 capitalize">{(dashboardData || EMPTY_SUMMARY).financial_health}</span></span>
             </div>
             <div>© 2024 FinSenseAi. All rights reserved.</div>
           </footer>

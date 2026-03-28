@@ -20,22 +20,22 @@ const axiosConfig = {
 };
 
 // ── Chat with FinBot / ML API ────────────────────────────────
-const sendMessage = async (user_id, business_id, message, reset = false) => {
+const sendMessage = async (payload) => {
   try {
+    console.log("📤 Sending to ML /chat:", payload);
+
     const response = await axios.post(
       `${FINBOT_BASE_URL}/chat`,
-      {
-        user_id,
-        business_id,
-        message,
-        reset
-      },
+      payload,
       axiosConfig
     );
 
     return response.data;
   } catch (error) {
-    console.error("FinBot sendMessage error:", error?.response?.data || error.message);
+    console.error(
+      "FinBot sendMessage error:",
+      error?.response?.data || error.message
+    );
 
     throw new Error(
       error?.response?.data?.detail ||
@@ -45,31 +45,6 @@ const sendMessage = async (user_id, business_id, message, reset = false) => {
   }
 };
 
-// ── Reset Chat History ───────────────────────────────────────
-// const resetChatHistory = async (user_id, business_id) => {
-//   try {
-//     const response = await axios.post(
-//       `${FINBOT_BASE_URL}/chat/reset`,
-//       {
-//         user_id,
-//         business_id,
-//       },
-//       axiosConfig
-//     );
-
-//     return response.data;
-//   } catch (error) {
-//     console.error(" FinBot resetChatHistory error:", error?.response?.data || error.message);
-
-//     throw new Error(
-//       error?.response?.data?.detail ||
-//       error?.response?.data?.message ||
-//       "Failed to reset FinBot chat history"
-//     );
-//   }
-// };
-
 module.exports = {
   sendMessage,
-  // resetChatHistory,
 };
