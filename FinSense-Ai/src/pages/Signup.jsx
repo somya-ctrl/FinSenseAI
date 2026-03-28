@@ -303,7 +303,7 @@ export default function Signup() {
                     }
                   }}
                   onError={() => setError("Google login failed. Please try again.")}
-                  width="100%"
+                  width={320}
                 />
               </div>
 
