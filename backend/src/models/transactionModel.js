@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
   {
+    business_name: {
+      type: String,
+      default: "",
+    },
     business_id: {
       type: String,
       required: true,
@@ -22,6 +26,10 @@ const transactionSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    category: {
+      type: String,
+      default: "",
+    },
     forecast_days: {
       type: Number,
       required: true,
@@ -34,7 +42,6 @@ const transactionSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    
   },
   { timestamps: true }
 );

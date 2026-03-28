@@ -16,6 +16,11 @@ function useMaterialSymbols() {
     link.href =
       "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block";
     document.head.appendChild(link);
+    const manrope = document.createElement("link");
+    manrope.rel = "stylesheet";
+    manrope.href =
+      "https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap";
+    document.head.appendChild(manrope);
   }, []);
 }
 
@@ -136,7 +141,7 @@ function Topbar({ onMenuClick, userName }) {
           <Icon name="menu" className="text-xl" />
         </button>
         <h2 className="text-base font-bold text-[#005183]">
-          {userName || "Account Details"} — New Entry
+          {userName ? `${userName} — Account Details` : "Account Details"}
         </h2>
       </div>
       <div className="flex items-center gap-5">
@@ -152,6 +157,7 @@ function Topbar({ onMenuClick, userName }) {
   );
 }
 
+// ── Shared field label ────────────────────────────────────────────────────────
 function FieldLabel({ children, required }) {
   return (
     <label className="text-[11px] font-bold text-slate-900 uppercase tracking-widest flex items-center gap-1">
@@ -161,7 +167,8 @@ function FieldLabel({ children, required }) {
   );
 }
 
-function TextInput({ name, value, onChange, placeholder, type = "text", prefix, disabled = false, error }) {
+// ── Shared input ──────────────────────────────────────────────────────────────
+function TextInput({ name, value, onChange, placeholder, type = "text", prefix, readOnly = false, error }) {
   return (
     <div className="relative">
       {prefix && (
@@ -175,12 +182,12 @@ function TextInput({ name, value, onChange, placeholder, type = "text", prefix, 
         onChange={onChange}
         type={type}
         placeholder={placeholder}
-        disabled={disabled}
+        readOnly={readOnly}
         className={[
           "w-full border rounded-md px-5 py-4 font-medium text-sm outline-none transition-all",
           prefix ? "pl-9" : "",
-          disabled
-            ? "bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed"
+          readOnly
+            ? "bg-white border-slate-100 text-slate-400 cursor-default"
             : error
             ? "border-red-300 bg-red-50 text-slate-800 focus:ring-1 focus:ring-red-400"
             : "border-slate-200 text-slate-700 bg-white focus:ring-1 focus:ring-[#005183] focus:border-[#005183] hover:border-slate-300",
@@ -191,6 +198,7 @@ function TextInput({ name, value, onChange, placeholder, type = "text", prefix, 
   );
 }
 
+// ── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({ message, type, onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 4000);
@@ -214,7 +222,8 @@ function Toast({ message, type, onClose }) {
   );
 }
 
-export default function Settings() {
+// ── Main ──────────────────────────────────────────────────────────────────────
+export default function NewEntry() {
   useMaterialSymbols();
 
   const navigate = useNavigate();
@@ -228,11 +237,13 @@ export default function Settings() {
   })();
 
   const [form, setForm] = useState({
-    business_id:     storedUser.business_id || "",
-    user_id:         storedUser.user_id     || "",
+    business_name:   storedUser.business_name  || "",
+    business_id:     storedUser.business_id    || localStorage.getItem("businessId") || "",
+    user_id:         storedUser.user_id        || localStorage.getItem("userId")     || "",
     description:     "",
     amount:          "",
     balance:         "",
+    category:        "",
     forecast_days:   "7",
     business_type:   "SaaS",
     monthly_revenue: "",
@@ -241,9 +252,7 @@ export default function Settings() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validate = () => {
@@ -264,12 +273,8 @@ export default function Settings() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const errors = validate();
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
+    if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
 
     setLoading(true);
     setFieldErrors({});
@@ -298,32 +303,19 @@ export default function Settings() {
 
       const rawText = await res.text();
       let data;
-      try { data = JSON.parse(rawText); } catch {
-        throw new Error("Server returned invalid JSON");
-      }
+      try { data = JSON.parse(rawText); } catch { throw new Error("Server returned invalid JSON"); }
+      if (!res.ok) throw new Error(data?.message || data?.detail || `Request failed (${res.status})`);
 
-      if (!res.ok) {
-        throw new Error(data?.message || data?.detail || `Request failed (${res.status})`);
-      }
-
-      // ── Save to localStorage so FinBot & other features read them ──
       localStorage.setItem("businessId", form.business_id.trim());
       localStorage.setItem("userId",     form.user_id.trim());
 
       setToast({ message: "Transaction created successfully!", type: "success" });
-
-      // Reset editable fields, keep IDs
       setForm((prev) => ({
         ...prev,
-        description:     "",
-        amount:          "",
-        balance:         "",
-        forecast_days:   "7",
-        monthly_revenue: "",
+        description: "", amount: "", balance: "",
+        category: "", forecast_days: "7", monthly_revenue: "",
       }));
-
     } catch (err) {
-      console.error("Create transaction error:", err);
       setToast({ message: err.message || "Failed to create transaction.", type: "error" });
     } finally {
       setLoading(false);
@@ -342,75 +334,123 @@ export default function Settings() {
           userName={storedUser.name || storedUser.user_id || ""}
         />
 
-        <main className="flex-1 p-6 sm:p-10">
-          <div className="max-w-4xl mx-auto">
-
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-1">
-                <Icon name="add_circle" fill className="text-[#005183] text-[18px]" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#005183]">
-                  New Transaction
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Create Entry
-              </h1>
-              <p className="text-slate-400 text-sm mt-1.5 leading-relaxed max-w-lg">
-                Fill in the transaction details below. Required fields are marked with an asterisk.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl">
+        <main className="flex-1 p-6 sm:p-10 pb-24 lg:pb-10">
+          <div className="max-w-5xl mx-auto">
+            <div className="bg-white rounded-2xl overflow-hidden">
               <form onSubmit={handleSubmit} noValidate>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
 
+                  {/* Business Name — read only from account */}
                   <div className="space-y-3">
-                    <FieldLabel required>Business ID</FieldLabel>
-                    <TextInput name="business_id" value={form.business_id} onChange={handleChange} placeholder="e.g. BIZ_001" error={fieldErrors.business_id} />
+                    <FieldLabel>Business Name</FieldLabel>
+                    <TextInput
+                      name="business_name"
+                      value={form.business_name}
+                      onChange={handleChange}
+                      placeholder="e.g. Acme Corp"
+                      readOnly
+                    />
                   </div>
 
+                  {/* Business ID — read only */}
                   <div className="space-y-3">
-                    <FieldLabel required>User ID</FieldLabel>
-                    <TextInput name="user_id" value={form.user_id} onChange={handleChange} placeholder="e.g. U001" error={fieldErrors.user_id} />
+                    <FieldLabel>Business ID</FieldLabel>
+                    <TextInput
+                      name="business_id"
+                      value={form.business_id}
+                      onChange={handleChange}
+                      placeholder="e.g. BIZ_001"
+                      readOnly
+                      error={fieldErrors.business_id}
+                    />
                   </div>
 
+                  {/* User ID — read only */}
+                  <div className="space-y-3">
+                    <FieldLabel>User ID</FieldLabel>
+                    <TextInput
+                      name="user_id"
+                      value={form.user_id}
+                      onChange={handleChange}
+                      placeholder="e.g. U001"
+                      readOnly
+                      error={fieldErrors.user_id}
+                    />
+                  </div>
+
+                  {/* Description — full width, editable */}
                   <div className="md:col-span-2 space-y-3">
                     <FieldLabel required>Description</FieldLabel>
-                    <div>
-                      <textarea
-                        name="description"
-                        value={form.description}
-                        onChange={handleChange}
-                        placeholder="e.g. Paid ₹500 for food"
-                        rows={3}
-                        className={[
-                          "w-full border rounded-md px-5 py-4 font-medium text-sm outline-none transition-all resize-none",
-                          fieldErrors.description
-                            ? "border-red-300 bg-red-50 text-slate-800 focus:ring-1 focus:ring-red-400"
-                            : "border-slate-200 text-slate-700 bg-white focus:ring-1 focus:ring-[#005183] focus:border-[#005183] hover:border-slate-300",
-                        ].join(" ")}
-                      />
-                      {fieldErrors.description && (
-                        <p className="mt-1.5 text-[11px] text-red-500 font-medium">{fieldErrors.description}</p>
-                      )}
-                    </div>
+                    <input
+                      name="description"
+                      value={form.description}
+                      onChange={handleChange}
+                      placeholder="e.g. Paid ₹500 for food"
+                      className={[
+                        "w-full border rounded-md px-5 py-6 font-medium text-sm outline-none transition-all",
+                        fieldErrors.description
+                          ? "border-red-300 bg-red-50 text-slate-800 focus:ring-1 focus:ring-red-400"
+                          : "border-slate-200 text-slate-700 bg-white focus:ring-1 focus:ring-[#005183] focus:border-[#005183] hover:border-slate-300",
+                      ].join(" ")}
+                    />
+                    {fieldErrors.description && (
+                      <p className="mt-1.5 text-[11px] text-red-500 font-medium">{fieldErrors.description}</p>
+                    )}
                   </div>
 
+                  {/* Amount */}
                   <div className="space-y-3">
                     <FieldLabel required>Amount</FieldLabel>
-                    <TextInput name="amount" value={form.amount} onChange={handleChange} placeholder="e.g. 500" type="number" prefix="₹" error={fieldErrors.amount} />
+                    <TextInput
+                      name="amount"
+                      value={form.amount}
+                      onChange={handleChange}
+                      placeholder="e.g. 500"
+                      type="number"
+                      prefix="₹"
+                      error={fieldErrors.amount}
+                    />
                   </div>
 
+                  {/* Balance */}
                   <div className="space-y-3">
                     <FieldLabel required>Balance</FieldLabel>
-                    <TextInput name="balance" value={form.balance} onChange={handleChange} placeholder="e.g. 25000" type="number" prefix="₹" error={fieldErrors.balance} />
+                    <TextInput
+                      name="balance"
+                      value={form.balance}
+                      onChange={handleChange}
+                      placeholder="e.g. 25000"
+                      type="number"
+                      prefix="₹"
+                      error={fieldErrors.balance}
+                    />
                   </div>
 
+                  {/* Category */}
+                  <div className="space-y-3">
+                    <FieldLabel>Category</FieldLabel>
+                    <TextInput
+                      name="category"
+                      value={form.category}
+                      onChange={handleChange}
+                      placeholder="e.g. Technology"
+                    />
+                  </div>
+
+                  {/* Forecast Days */}
                   <div className="space-y-3">
                     <FieldLabel required>Forecast Days</FieldLabel>
-                    <TextInput name="forecast_days" value={form.forecast_days} onChange={handleChange} placeholder="e.g. 7" type="number" error={fieldErrors.forecast_days} />
+                    <TextInput
+                      name="forecast_days"
+                      value={form.forecast_days}
+                      onChange={handleChange}
+                      placeholder="e.g. 7"
+                      type="number"
+                      error={fieldErrors.forecast_days}
+                    />
                   </div>
 
+                  {/* Business Type */}
                   <div className="space-y-3">
                     <FieldLabel>Business Type</FieldLabel>
                     <div className="relative">
@@ -432,20 +472,31 @@ export default function Settings() {
                     </div>
                   </div>
 
+                  {/* Monthly Revenue — full width */}
                   <div className="md:col-span-2 space-y-3">
                     <FieldLabel required>Monthly Revenue</FieldLabel>
-                    <TextInput name="monthly_revenue" value={form.monthly_revenue} onChange={handleChange} placeholder="e.g. 150000" type="number" prefix="₹" error={fieldErrors.monthly_revenue} />
+                    <TextInput
+                      name="monthly_revenue"
+                      value={form.monthly_revenue}
+                      onChange={handleChange}
+                      placeholder="e.g. 150000"
+                      type="number"
+                      prefix="₹"
+                      error={fieldErrors.monthly_revenue}
+                    />
                   </div>
                 </div>
 
+                {/* Divider */}
                 <div className="border-t border-slate-100 my-10" />
 
+                {/* Submit row */}
                 <div className="flex flex-col sm:flex-row items-center gap-4">
                   <button
                     type="submit"
                     disabled={loading}
                     className={[
-                      "w-full sm:flex-1 text-white rounded-md py-5 font-bold text-sm tracking-widest shadow-xl transition-all uppercase flex items-center justify-center gap-2",
+                      "w-full sm:flex-1 text-white rounded-md py-6 font-bold text-sm tracking-widest shadow-xl transition-all uppercase flex items-center justify-center gap-2",
                       loading
                         ? "bg-slate-400 cursor-not-allowed shadow-none"
                         : "bg-[#005183] hover:bg-[#004070] active:scale-[0.98] shadow-[#005183]/20",
@@ -463,7 +514,7 @@ export default function Settings() {
                     ) : (
                       <>
                         <Icon name="save" className="text-[18px]" />
-                        Save Entry
+                        Save Changes
                       </>
                     )}
                   </button>
@@ -475,7 +526,7 @@ export default function Settings() {
                         setForm((prev) => ({
                           ...prev,
                           description: "", amount: "", balance: "",
-                          forecast_days: "7", monthly_revenue: "",
+                          category: "", forecast_days: "7", monthly_revenue: "",
                         }))
                       }
                       className="w-full sm:w-auto px-8 py-5 border border-slate-200 rounded-md text-slate-500 hover:text-slate-700 hover:border-slate-300 font-bold text-sm tracking-widest uppercase transition-all"
@@ -489,11 +540,12 @@ export default function Settings() {
           </div>
         </main>
 
+        {/* Mobile bottom nav */}
         <nav className="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center bg-white border-t border-slate-100 h-16">
           {[
             { icon: "grid_view",  path: "/overview" },
             { icon: "payments",   path: "/cashflow" },
-            { icon: "add_circle", path: "/new-entry", active: true },
+            { icon: "settings",   path: "/settings", active: true },
             { icon: "bar_chart",  path: "/reports" },
           ].map(({ icon, path, active }) => (
             <a key={path} href={path} className={active ? "text-[#005183]" : "text-slate-400"}>

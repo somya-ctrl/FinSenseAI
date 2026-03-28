@@ -3,17 +3,19 @@ const Transaction = require("../models/transactionModel");
 const createTransactionService = async (data) => {
   try {
     const {
+      business_name,
       business_id,
       user_id,
       description,
       amount,
       balance,
+      category,
       forecast_days,
       business_type,
       monthly_revenue,
     } = data;
 
-    // Basic validation
+    // Required field validation
     if (
       !business_id ||
       !user_id ||
@@ -24,15 +26,17 @@ const createTransactionService = async (data) => {
       !business_type ||
       !monthly_revenue
     ) {
-      throw new Error("All fields are required");
+      throw new Error("All required fields must be provided");
     }
 
     const transaction = await Transaction.create({
+      business_name:   business_name   || "",
       business_id,
       user_id,
       description,
       amount,
       balance,
+      category:        category        || "",
       forecast_days,
       business_type,
       monthly_revenue,
