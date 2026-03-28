@@ -54,18 +54,7 @@ function Navbar() {
           >
             FinSense-AI
           </span>
-          <div className="hidden md:flex items-center gap-8">
-            {["Solutions", "Pricing", "Insights", "About"].map((item) => (
-              <a
-                key={item}
-                href="#"
-                className="text-slate-500 hover:text-[#005a92] transition-colors text-sm font-medium"
-                style={{ fontFamily: "Manrope, sans-serif" }}
-              >
-                {item}
-              </a>
-            ))}
-          </div>
+         
         </div>
         <div className="flex items-center gap-4">
           <Link

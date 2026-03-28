@@ -21,7 +21,6 @@ export const navItems = [
   { icon: "payments",        label: "Cash Flow Prediction", path: "/cash-flow" },
   { icon: "account_balance", label: "Analyze Transaction",  path: "/analyze"   },
   { icon: "description",     label: "FinBot",               path: "/finbot"    },
-  { icon: "bar_chart",       label: "Reports",              path: "/reports"   },
   
 ];
 
