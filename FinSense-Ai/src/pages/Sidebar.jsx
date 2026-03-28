@@ -22,7 +22,7 @@ export const navItems = [
   { icon: "account_balance", label: "Analyze Transaction",  path: "/analyze"   },
   { icon: "description",     label: "FinBot",               path: "/finbot"    },
   { icon: "bar_chart",       label: "Reports",              path: "/reports"   },
-  { icon: "settings",        label: "Settings",             path: "/settings"  },
+  
 ];
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
