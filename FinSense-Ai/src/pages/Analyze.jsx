@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import Sidebar, { Icon } from "./Sidebar";
 
 const API_BASE =
   typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL
@@ -17,117 +17,6 @@ function useMaterialSymbols() {
       "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block";
     document.head.appendChild(link);
   }, []);
-}
-
-const Icon = ({ name, fill = false, className = "" }) => (
-  <span
-    className={`material-symbols-outlined leading-none select-none ${className}`}
-    style={
-      fill
-        ? { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }
-        : { fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }
-    }
-  >
-    {name}
-  </span>
-);
-
-const navItems = [
-  { icon: "dashboard", label: "Overview", path: "/overview" },
-  { icon: "payments", label: "Cash Flow Prediction", path: "/cashflow" },
-  { icon: "account_balance", label: "Analyze Transaction", path: "/analyze", active: true },
-  { icon: "smart_toy", label: "FinBot", path: "/finbot" },
-  { icon: "bar_chart", label: "Reports", path: "/reports" },
-  { icon: "settings", label: "Settings", path: "/settings" },
-];
-
-function Sidebar({ open, onClose }) {
-  const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    if (window.confirm("Are you sure you want to sign out?")) {
-      try {
-        const token = localStorage.getItem("token");
-        if (token) {
-          await fetch(`${API_BASE}/auth/logout`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-        }
-      } catch (err) {
-        console.error("Sign out error:", err);
-      } finally {
-        localStorage.clear();
-        navigate("/login");
-      }
-    }
-  };
-
-  return (
-    <>
-      {open && (
-        <div className="fixed inset-0 bg-black/25 z-40 lg:hidden" onClick={onClose} />
-      )}
-      <aside
-        className={[
-          "h-screen w-64 fixed left-0 top-0 bg-slate-50 flex flex-col p-6 space-y-2 z-40",
-          "transition-transform duration-300 ease-in-out",
-          open ? "translate-x-0" : "-translate-x-full",
-          "lg:translate-x-0",
-        ].join(" ")}
-      >
-        <div className="mb-10 px-4">
-          <h1 className="text-lg font-black text-[#00426d] uppercase tracking-tight" style={{ fontFamily: "Manrope, sans-serif" }}>
-            FinSense<span className="text-[#006a6a]">Ai</span>
-          </h1>
-          <p className="uppercase tracking-widest text-[10px] font-bold text-slate-500 mt-0.5">Small Biz Edition</p>
-        </div>
-        <div className="lg:hidden mb-2">
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-200/50 text-slate-500">
-            <Icon name="close" className="text-[20px]" />
-          </button>
-        </div>
-        <nav className="flex-1 space-y-1">
-          {navItems.map(({ icon, label, path, active }) => (
-            <a
-              key={label}
-              href={path}
-              onClick={onClose}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                active ? "bg-white text-[#00426d] shadow-sm" : "text-slate-500 hover:bg-slate-200/50"
-              }`}
-            >
-              <Icon name={icon} className="text-[20px]" />
-              <span className="uppercase tracking-widest text-[10px] font-bold">{label}</span>
-            </a>
-          ))}
-        </nav>
-        <div className="mt-auto pt-6 space-y-1">
-          <a
-            href="/new-entry"
-            className="w-full mb-6 text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-transform flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #00426d, #005a92)" }}
-          >
-            New Entry
-          </a>
-          <a href="/help" className="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-200/50 transition-all duration-300 rounded-lg">
-            <Icon name="help_outline" className="text-[20px]" />
-            <span className="uppercase tracking-widest text-[10px] font-bold">Help Center</span>
-          </a>
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all duration-300 rounded-lg text-left"
-          >
-            <Icon name="logout" className="text-[20px]" />
-            <span className="uppercase tracking-widest text-[10px] font-bold">Sign Out</span>
-          </button>
-        </div>
-      </aside>
-    </>
-  );
 }
 
 function Topbar({ onMenuClick }) {
@@ -318,16 +207,16 @@ export default function AnalyzeTransaction() {
   const insights = result?.insights || [];
   const forecast = result?.forecast || null;
   const explanation = result?.explanation || null;
-  const keywords = result?.top_keywords || result?.summary?.top_keywords || [];
+  // API shape: explanation.top_keywords  (not result.top_keywords)
+  const keywords = result?.explanation?.top_keywords || result?.summary?.top_keywords || [];
   const keywordWeights = explanation?.keyword_weights || {};
   const alternatives = explanation?.alternatives || [];
   const category = result?.category || result?.summary?.category;
-  const sentiment = result?.sentiment || (isAnomaly ? "Anomalous" : "Normal");
   const recommendation = result?.summary?.key_insight || result?.recommendation;
 
   return (
     <div className="min-h-screen bg-[#f7f9fb] text-[#191c1e]" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="lg:ml-64 flex flex-col min-h-screen">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
@@ -518,247 +407,274 @@ export default function AnalyzeTransaction() {
 
               {/* ── RIGHT PANEL ─────────────────────────────────────────────── */}
               <section className="w-full lg:w-7/12 space-y-5">
-                <div className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-sm">
 
-                  {/* ── Header: Category + Confidence ───────────────────────── */}
-                  <div className="p-6 sm:p-8 border-b border-slate-100">
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Icon name="verified" fill className="text-[#006a6a] text-[16px]" />
-                          <span className="text-[10px] font-bold text-[#006a6a] uppercase tracking-[0.2em]">
-                            {result ? "Prediction Complete" : "Awaiting Input"}
-                          </span>
-                          {/* Anomaly badge */}
-                          {result && (
-                            <span className={`ml-2 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                              isAnomaly
-                                ? "bg-red-100 text-red-600"
-                                : "bg-emerald-100 text-emerald-600"
+                {/* ── Empty state ─────────────────────────────────────────────── */}
+                {!result && !loading && (
+                  <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm flex flex-col items-center justify-center py-20 px-8 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-[#005A92]/10 flex items-center justify-center mb-5">
+                      <Icon name="analytics" className="text-[#005A92] text-[32px]" />
+                    </div>
+                    <h3 className="text-lg font-extrabold text-[#191c1e] mb-2">No Analysis Yet</h3>
+                    <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
+                      Enter a Business ID on the left and click <strong>Analyze Transaction</strong> to see full ML predictions, forecast, and insights here.
+                    </p>
+                  </div>
+                )}
+
+                {/* ── Loading skeleton ─────────────────────────────────────────── */}
+                {loading && (
+                  <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-8 space-y-5 animate-pulse">
+                    <div className="h-5 bg-slate-100 rounded-full w-1/3" />
+                    <div className="h-8 bg-slate-100 rounded-full w-2/3" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="h-20 bg-slate-100 rounded-xl" />
+                      <div className="h-20 bg-slate-100 rounded-xl" />
+                    </div>
+                    <div className="h-32 bg-slate-100 rounded-xl" />
+                    <div className="h-24 bg-slate-100 rounded-xl" />
+                  </div>
+                )}
+
+                {/* ── Results (only when data is present) ─────────────────────── */}
+                {result && (
+                  <div className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-sm">
+
+                    {/* ── Header: Status + Confidence ─────────────────────────── */}
+                    <div className="p-6 sm:p-8 border-b border-slate-100">
+                      <div className="flex justify-between items-start mb-5">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <Icon name="verified" fill className="text-[#006a6a] text-[16px]" />
+                            <span className="text-[10px] font-bold text-[#006a6a] uppercase tracking-[0.2em]">
+                              Prediction Complete
+                            </span>
+                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                              isAnomaly ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-600"
                             }`}>
                               {isAnomaly ? "⚠ Anomaly" : "✓ Normal"}
                             </span>
+                          </div>
+                          <h3 className="text-2xl font-extrabold text-[#191c1e]">Analysis Results</h3>
+                          {/* Transaction pill — which tx was actually analyzed */}
+                          {result.input && (
+                            <div className="mt-2 inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3 py-1">
+                              <Icon name="receipt_long" className="text-slate-400 text-[14px]" />
+                              <span className="text-[10px] font-semibold text-slate-500 capitalize">
+                                "{result.input.description}" · ₹{result.input.amount}
+                              </span>
+                            </div>
                           )}
                         </div>
-                        <h3 className="text-2xl font-extrabold text-[#191c1e]">Analysis Results</h3>
-                      </div>
 
-                      <div className="text-right">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Confidence</p>
-                        <div className={`text-3xl font-bold ${result ? "text-[#005A92]" : "text-slate-300"}`}>
-                          {confidence}
-                        </div>
-                        {result && (
-                          <div className="mt-1 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        {/* Confidence score */}
+                        <div className="text-right flex-shrink-0 ml-4">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Confidence</p>
+                          <div className="text-3xl font-bold text-[#005A92]">{confidence}</div>
+                          <div className="mt-1.5 w-28 bg-slate-100 rounded-full h-1.5 overflow-hidden ml-auto">
                             <div
                               className="h-full rounded-full bg-[#005A92] transition-all duration-700"
                               style={{ width: `${result.confidence || 0}%` }}
                             />
                           </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Category + Sentiment row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="bg-[#f7f9fb] p-4 rounded-xl border border-slate-100">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Predicted Category</p>
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#cfe4ff] flex items-center justify-center flex-shrink-0">
-                            <Icon name="label" fill className="text-[#005A92] text-[18px]" />
-                          </div>
-                          <span className="font-bold text-[#191c1e] text-sm capitalize">
-                            {category || <span className="text-slate-400 font-normal">Awaiting analysis</span>}
-                          </span>
                         </div>
                       </div>
 
-                      <div className="bg-[#f7f9fb] p-4 rounded-xl border border-slate-100">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Anomaly Status</p>
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            isAnomaly ? "bg-red-100" : "bg-emerald-100"
-                          }`}>
-                            <Icon
-                              name={isAnomaly ? "warning" : "check_circle"}
-                              fill
-                              className={`text-[18px] ${isAnomaly ? "text-red-500" : "text-emerald-500"}`}
-                            />
+                      {/* Category + Anomaly status cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-[#f7f9fb] p-4 rounded-xl border border-slate-100">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Predicted Category</p>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-[#cfe4ff] flex items-center justify-center flex-shrink-0">
+                              <Icon name="label" fill className="text-[#005A92] text-[18px]" />
+                            </div>
+                            <span className="font-bold text-[#191c1e] text-sm capitalize">{category}</span>
                           </div>
-                          <div>
-                            <span className="font-bold text-[#191c1e] text-sm block">
-                              {isAnomaly ? "Anomaly Detected" : "Within Normal Range"}
-                            </span>
-                            {result && (
+                        </div>
+
+                        <div className="bg-[#f7f9fb] p-4 rounded-xl border border-slate-100">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Anomaly Status</p>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              isAnomaly ? "bg-red-100" : "bg-emerald-100"
+                            }`}>
+                              <Icon
+                                name={isAnomaly ? "warning" : "check_circle"}
+                                fill
+                                className={`text-[18px] ${isAnomaly ? "text-red-500" : "text-emerald-500"}`}
+                              />
+                            </div>
+                            <div>
+                              <span className="font-bold text-[#191c1e] text-sm block">
+                                {isAnomaly ? "Anomaly Detected" : "Within Normal Range"}
+                              </span>
                               <span className="text-[10px] text-slate-400">
                                 Z-score: {result.anomaly?.z_score?.toFixed(2) ?? "—"}
                               </span>
-                            )}
+                            </div>
                           </div>
                         </div>
                       </div>
+
+                      {/* Anomaly plain-English explanation */}
+                      {anomalyMsg && (
+                        <div className={`mt-4 px-4 py-3 rounded-xl text-xs font-medium leading-relaxed ${
+                          isAnomaly
+                            ? "bg-red-50 text-red-700 border border-red-200"
+                            : "bg-slate-50 text-slate-500 border border-slate-100"
+                        }`}>
+                          {anomalyMsg}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Anomaly explanation */}
-                    {result && anomalyMsg && (
-                      <div className={`mt-4 px-4 py-3 rounded-xl text-xs font-medium ${
-                        isAnomaly ? "bg-red-50 text-red-700 border border-red-200" : "bg-slate-50 text-slate-500 border border-slate-100"
-                      }`}>
-                        {anomalyMsg}
+                    {/* ── Forecast Impact + Daily chart ────────────────────────── */}
+                    {forecast && (
+                      <div className="p-6 sm:p-8 border-b border-slate-100 space-y-4">
+                        <div className="flex flex-wrap justify-between items-end gap-4">
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                              {forecast.days}-Day Forecast Impact
+                            </p>
+                            <h4 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#191c1e]">
+                              {forecastImpact >= 0 ? "+" : "−"}
+                              {formatCompact(Math.abs(forecastImpact))}
+                              <span className="text-sm font-medium text-slate-400 ml-2">Projected</span>
+                            </h4>
+                            <div className="flex items-center gap-3 mt-2 flex-wrap">
+                              <span className="text-xs text-slate-500">
+                                Start: <strong>{formatCompact(forecast.start_balance)}</strong>
+                              </span>
+                              <span className="text-slate-300">→</span>
+                              <span className="text-xs text-slate-500">
+                                End: <strong className="text-[#005A92]">{formatCompact(forecast.final_balance)}</strong>
+                              </span>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                                forecast.trend === "growing"
+                                  ? "bg-emerald-100 text-emerald-600"
+                                  : "bg-red-100 text-red-600"
+                              }`}>
+                                {forecast.trend}
+                              </span>
+                            </div>
+                          </div>
+                          {forecast.improvement_pct !== undefined && (
+                            <div className="text-right">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Improvement</p>
+                              <p className="text-2xl font-extrabold text-emerald-500">+{forecast.improvement_pct}%</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Daily bar chart — real API data */}
+                        {forecast.daily?.length > 0 && (
+                          <>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Daily Balance Projection</p>
+                            <ForecastBarChart daily={forecast.daily} />
+                            {/* Daily breakdown table */}
+                            <div className="overflow-x-auto rounded-xl border border-slate-100">
+                              <table className="w-full text-xs">
+                                <thead className="bg-slate-50">
+                                  <tr className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                    <th className="text-left px-4 py-2.5">Day</th>
+                                    <th className="text-right px-4 py-2.5">Net Cashflow</th>
+                                    <th className="text-right px-4 py-2.5">Closing Balance</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {forecast.daily.map((day) => (
+                                    <tr key={day.day} className="border-t border-slate-50 hover:bg-slate-50 transition-colors">
+                                      <td className="px-4 py-2.5 font-semibold text-slate-600">Day {day.day}</td>
+                                      <td className={`px-4 py-2.5 text-right font-bold ${day.net_cashflow >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                                        {day.net_cashflow >= 0 ? "+" : "−"}{formatCompact(Math.abs(day.net_cashflow))}
+                                      </td>
+                                      <td className="px-4 py-2.5 text-right font-bold text-[#005A92]">
+                                        {formatCompact(day.balance)}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Forecast summary text */}
+                        {forecast.summary && (
+                          <p className="text-xs text-slate-400 italic">{forecast.summary}</p>
+                        )}
                       </div>
                     )}
-                  </div>
 
-                  {/* ── Forecast Impact ──────────────────────────────────────── */}
-                  <div className="p-6 sm:p-8 border-b border-slate-100 space-y-4">
-                    <div className="flex flex-wrap justify-between items-end gap-4">
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                          {forecast?.days ?? forecastDays}-Day Forecast Impact
-                        </p>
-                        <h4 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#191c1e]">
-                          {forecastImpact < 0 ? "−" : "+"}
-                          {formatCompact(Math.abs(forecastImpact))}
-                          <span className="text-sm font-medium text-slate-400 ml-2">Projected</span>
-                        </h4>
-                        {forecast && (
-                          <div className="flex items-center gap-4 mt-2">
-                            <span className="text-xs text-slate-500">
-                              Start: <strong>{formatCompact(forecast.start_balance)}</strong>
-                            </span>
-                            <span className="text-slate-300">→</span>
-                            <span className="text-xs text-slate-500">
-                              End: <strong className="text-[#005A92]">{formatCompact(forecast.final_balance)}</strong>
-                            </span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                              forecast.trend === "growing"
-                                ? "bg-emerald-100 text-emerald-600"
-                                : "bg-red-100 text-red-600"
-                            }`}>
-                              {forecast.trend}
-                            </span>
+                    {/* ── Classification Explanation ───────────────────────────── */}
+                    {explanation && (
+                      <div className="p-6 sm:p-8 border-b border-slate-100 space-y-4">
+                        <h4 className="text-sm font-bold text-[#191c1e]">Classification Explanation</h4>
+
+                        {explanation.reasoning_sentence && (
+                          <p className="text-xs text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            {explanation.reasoning_sentence}
+                          </p>
+                        )}
+
+                        {/* Top keywords with weights — from explanation.top_keywords */}
+                        {keywords.length > 0 && (
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Top Keywords</p>
+                            <div className="flex flex-wrap gap-2">
+                              {keywords.map((kw) => (
+                                <KeywordChip key={kw} keyword={kw} weight={keywordWeights[kw]} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Alternative categories */}
+                        {alternatives.length > 0 && (
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Alternative Categories</p>
+                            <div className="space-y-2">
+                              {alternatives.map((alt) => (
+                                <div key={alt.category} className="flex items-center gap-3">
+                                  <span className="text-xs font-semibold text-slate-600 capitalize w-20 flex-shrink-0">{alt.category}</span>
+                                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full rounded-full bg-slate-400 transition-all duration-500" style={{ width: `${alt.confidence}%` }} />
+                                  </div>
+                                  <span className="text-[10px] font-bold text-slate-400 w-10 text-right">{alt.confidence}%</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
-                      {forecast?.improvement_pct !== undefined && (
-                        <div className="text-right">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Improvement</p>
-                          <p className="text-2xl font-extrabold text-emerald-500">+{forecast.improvement_pct}%</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Daily forecast bar chart — real API data */}
-                    {forecast?.daily && forecast.daily.length > 0 && (
-                      <>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Daily Balance Projection</p>
-                        <ForecastBarChart daily={forecast.daily} />
-                        {/* Daily table */}
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-xs">
-                            <thead>
-                              <tr className="text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                                <th className="text-left pb-2">Day</th>
-                                <th className="text-right pb-2">Net Cashflow</th>
-                                <th className="text-right pb-2">Balance</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {forecast.daily.map((day) => (
-                                <tr key={day.day} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                  <td className="py-2 font-semibold text-slate-600">Day {day.day}</td>
-                                  <td className={`py-2 text-right font-bold ${day.net_cashflow >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                                    {day.net_cashflow >= 0 ? "+" : "−"}{formatCompact(Math.abs(day.net_cashflow))}
-                                  </td>
-                                  <td className="py-2 text-right font-bold text-[#005A92]">
-                                    {formatCompact(day.balance)}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </>
                     )}
-                  </div>
 
-                  {/* ── ML Explanation: Keywords + Alternatives ──────────────── */}
-                  {result && (explanation || keywords.length > 0) && (
-                    <div className="p-6 sm:p-8 border-b border-slate-100 space-y-4">
-                      <h4 className="text-sm font-bold text-[#191c1e]">Classification Explanation</h4>
+                    {/* ── Spending Insights ────────────────────────────────────── */}
+                    {insights.length > 0 && (
+                      <div className="p-6 sm:p-8 border-b border-slate-100 space-y-3">
+                        <h4 className="text-sm font-bold text-[#191c1e] flex items-center gap-2">
+                          <Icon name="insights" className="text-[18px] text-[#005A92]" />
+                          Spending Insights
+                        </h4>
+                        {insights.map((insight, idx) => (
+                          <InsightCard key={idx} insight={insight} />
+                        ))}
+                      </div>
+                    )}
 
-                      {explanation?.reasoning_sentence && (
-                        <p className="text-xs text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                          {explanation.reasoning_sentence}
+                    {/* ── Key Insight banner ───────────────────────────────────── */}
+                    <div className="bg-[#e8f7f7] p-5 sm:p-6 flex gap-4">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <Icon name="auto_awesome" fill className="text-[#006a6a] text-[20px]" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-[#004f4f] uppercase tracking-widest mb-1.5">Key Insight</p>
+                        <p className="text-sm text-[#004f4f] font-medium leading-relaxed">
+                          {recommendation || "No key insight available for this analysis."}
                         </p>
-                      )}
-
-                      {/* Top keywords */}
-                      {keywords.length > 0 && (
-                        <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Top Keywords</p>
-                          <div className="flex flex-wrap gap-2">
-                            {keywords.map((kw) => (
-                              <KeywordChip key={kw} keyword={kw} weight={keywordWeights[kw]} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Alternative categories */}
-                      {alternatives.length > 0 && (
-                        <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Alternative Categories</p>
-                          <div className="space-y-2">
-                            {alternatives.map((alt) => (
-                              <div key={alt.category} className="flex items-center gap-3">
-                                <span className="text-xs font-semibold text-slate-600 capitalize w-20 flex-shrink-0">{alt.category}</span>
-                                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-slate-400"
-                                    style={{ width: `${alt.confidence}%` }}
-                                  />
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-400 w-10 text-right">{alt.confidence}%</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ── Insights ─────────────────────────────────────────────── */}
-                  {insights.length > 0 && (
-                    <div className="p-6 sm:p-8 border-b border-slate-100 space-y-3">
-                      <h4 className="text-sm font-bold text-[#191c1e] flex items-center gap-2">
-                        <Icon name="insights" className="text-[18px] text-[#005A92]" />
-                        Spending Insights
-                      </h4>
-                      {insights.map((insight, idx) => (
-                        <InsightCard key={idx} insight={insight} />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* ── AI Recommendation (key_insight from summary) ─────────── */}
-                  <div className="bg-[#e8f7f7] p-5 sm:p-6 flex gap-4">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <Icon name="auto_awesome" fill className="text-[#006a6a] text-[20px]" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-[#004f4f] uppercase tracking-widest mb-1.5">
-                        Key Insight
-                      </p>
-                      <p className="text-sm text-[#004f4f] font-medium leading-relaxed">
-                        {recommendation || "Run an analysis to generate insights for this transaction."}
-                      </p>
-                      {result?.forecast?.summary && (
-                        <p className="text-xs text-[#005a5a] mt-2 opacity-80">{result.forecast.summary}</p>
-                      )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </section>
 
             </div>

@@ -1,448 +1,298 @@
-import { useState } from "react";
+import { useState, useEffect } from 'react';
+import Sidebar, { Icon } from './Sidebar';
 
-const NAV_ITEMS = [
-  { icon: "account_balance_wallet", label: "Cash Flow" },
-  { icon: "receipt_long", label: "Ledger" },
-  { icon: "timeline", label: "Predictions", active: true },
-  { icon: "lightbulb", label: "Insights" },
-  { icon: "credit_card", label: "Accounts" },
-];
+// ── Sub-components ────────────────────────────────────────────────────────────
 
-const SCENARIOS = [
-  {
-    title: "New Logistics Hub",
-    enabled: true,
-    desc: "-$250k CapEx in Q3. Predicts 15% efficiency gain by year end.",
-  },
-  {
-    title: "Q4 Seasonality Spike",
-    enabled: false,
-    desc: "Apply historical 20% revenue lift to predicted Q4 baseline.",
-  },
-  {
-    title: "Loan Amortization",
-    enabled: true,
-    desc: "Include scheduled $12k monthly debt service payments.",
-  },
-];
-
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
-function Toggle({ enabled }) {
+function TopAppBar({ onMenuClick }) {
   return (
-    <div
-      className={`w-10 h-5 rounded-full relative flex items-center px-1 transition-colors ${
-        enabled ? "bg-[#005a92]" : "bg-gray-200"
-      }`}
-    >
-      <div
-        className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
-          enabled ? "translate-x-4" : "translate-x-0"
-        }`}
-      />
-    </div>
-  );
-}
-
-function Icon({ name, className = "" }) {
-  return (
-    <span
-      className={`material-symbols-outlined ${className}`}
-      style={{ fontFamily: "'Material Symbols Outlined'" }}
-    >
-      {name}
-    </span>
-  );
-}
-
-function Sidebar() {
-  return (
-    <aside className="h-screen w-64 fixed left-0 top-0 z-40 bg-[#f2f4f6] flex flex-col py-6">
-      {/* Logo */}
-      <div className="px-8 mb-10">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#00426d] rounded-lg flex items-center justify-center">
-            <Icon name="architecture" className="text-white text-sm" />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-[#191c1e] text-lg tracking-tighter" style={{ fontFamily: "Manrope" }}>
-              FinSense<span className="text-[#006a6a]">Ai</span>
-            </h1>
-            <p className="font-medium uppercase tracking-widest text-[10px] text-[#717881]">
-              Strategic Growth
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 space-y-1">
-        {NAV_ITEMS.map(({ icon, label, active }) =>
-          active ? (
-            <a
-              key={label}
-              href="#"
-              className="bg-white text-[#005a92] rounded-r-full shadow-sm px-6 py-3 flex items-center gap-4"
-            >
-              <Icon name={icon} />
-              <span className="font-medium uppercase tracking-widest text-[10px]">{label}</span>
-            </a>
-          ) : (
-            <a
-              key={label}
-              href="#"
-              className="text-[#717881] hover:text-[#005a92] px-6 py-3 flex items-center gap-4 transition-all"
-            >
-              <Icon name={icon} />
-              <span className="font-medium uppercase tracking-widest text-[10px]">{label}</span>
-            </a>
-          )
-        )}
-      </nav>
-
-      {/* Bottom */}
-      <div className="px-6 mt-auto space-y-4">
-        <button className="w-full bg-gradient-to-br from-[#00426d] to-[#005a92] text-white py-3 rounded-md font-bold text-sm tracking-tight flex items-center justify-center gap-2" style={{ fontFamily: "Manrope" }}>
-          <Icon name="add" className="text-sm" />
-          New Entry
+    <header className="flex items-center justify-between md:ml-64 px-6 md:px-8 py-4 fixed top-0 left-0 right-0 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl z-30 font-['Manrope'] text-sm font-medium border-b border-slate-200 dark:border-slate-800">
+      <div className="flex items-center gap-3">
+        {/* Mobile hamburger */}
+        <button
+          onClick={onMenuClick}
+          className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+        >
+          <Icon name="menu" className="text-[22px]" />
         </button>
-        <div className="pt-6 border-t border-gray-200 space-y-1">
-          {[{ icon: "help_outline", label: "Help Center" }, { icon: "logout", label: "Logout" }].map(({ icon, label }) => (
-            <a key={label} href="#" className="text-[#717881] hover:text-[#005a92] py-2 flex items-center gap-4 transition-all">
-              <Icon name={icon} className="text-xl" />
-              <span className="font-medium uppercase tracking-widest text-[10px]">{label}</span>
-            </a>
-          ))}
-        </div>
+        <h2 className="text-lg md:text-xl font-bold text-sky-900 dark:text-sky-400 tracking-tight uppercase">
+          Cash Flow Forecast
+        </h2>
       </div>
-    </aside>
-  );
-}
 
-function TopBar() {
-  return (
-    <header className="fixed top-0 right-0 left-64 z-50 bg-[#f7f9fb]/80 backdrop-blur-xl flex justify-between items-center px-8 h-16">
-      <div className="flex items-center gap-8">
-        <div className="relative">
-          <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#717881] text-lg" />
+      <div className="flex items-center gap-4 md:gap-6">
+        <div className="relative hidden md:block">
+          <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
-            className="pl-10 pr-4 py-1.5 bg-[#f2f4f6] border-none rounded-full text-sm w-64 focus:outline-none focus:ring-1 focus:ring-[#005a92]"
-            placeholder="Search ledger..."
+            className="bg-slate-100 border-none rounded-full pl-10 pr-4 py-2 text-xs focus:ring-2 focus:ring-sky-900 w-64 transition-all dark:bg-slate-800 dark:text-white"
+            placeholder="Search insights..."
             type="text"
           />
         </div>
-        <nav className="flex gap-6">
-          {["Dashboard", "Analytics"].map((item) => (
-            <a key={item} href="#" className="text-[#717881] hover:text-[#005a92] transition-colors text-sm" style={{ fontFamily: "Manrope" }}>
-              {item}
-            </a>
-          ))}
-          <a href="#" className="text-[#005a92] border-b-2 border-[#005a92] pb-1 text-sm" style={{ fontFamily: "Manrope" }}>
-            Forecasting
-          </a>
-        </nav>
-      </div>
-      <div className="flex items-center gap-4">
-        <button className="bg-gradient-to-r from-[#00426d] to-[#005a92] text-white px-4 py-2 rounded-md text-sm font-bold" style={{ fontFamily: "Manrope" }}>
-          Generate Report
-        </button>
-        {["notifications", "settings"].map((icon) => (
-          <button key={icon} className="p-2 text-[#717881] hover:bg-[#f2f4f6] rounded-full transition-colors">
-            <Icon name={icon} />
+
+        <div className="flex items-center gap-3">
+          <button className="material-symbols-outlined text-slate-500 hover:text-sky-900 dark:hover:text-sky-400 transition-colors">
+            notifications
           </button>
-        ))}
-        <div className="w-8 h-8 rounded-full bg-[#e0e3e5] overflow-hidden ml-2">
-          <img
-            className="w-full h-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvuqgsOA27MalVbEZdvfCiKkywI1Z6WoLS_AkcP5hxkpmGFHwlOjo7tpt1sW7MoErDSxdPetchsmSZLOlYSMKY8-cditbO-MtxXPUwGYV03QU3eWP8SjLi4fOvHGVrswC0urGogDPc88tzcMegMhCZg-_YzH2ppFdthJ_aO8B-qbBBQ9RVr01hOz_BCKXzq27Is6pplKG1vZEvkIUq0ehTN5annTNjIfmnMZKjhJZmiHuPEKdBEc1TZT8i2wwkhk-iqlRCt68jVDLS"
-            alt="User avatar"
-          />
+          <button className="material-symbols-outlined text-slate-500 hover:text-sky-900 dark:hover:text-sky-400 transition-colors">
+            history_edu
+          </button>
+          <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 flex-shrink-0">
+            <div className="w-full h-full bg-[#00426d]/20 flex items-center justify-center">
+              <Icon name="person" className="text-[#00426d] text-[18px]" />
+            </div>
+          </div>
         </div>
       </div>
     </header>
   );
 }
 
-function ForecastChart({ activeScenario, setActiveScenario }) {
+function MetricCard({ label, value, trend, trendIcon, trendColor, borderColor }) {
   return (
-    <div className="col-span-9 bg-white p-10 rounded-xl relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-[#005a92]/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
-      <div className="flex justify-between items-center mb-12 relative z-10">
-        <div className="flex items-center gap-4">
-          <h3 className="text-lg font-bold" style={{ fontFamily: "Manrope" }}>Predicted Cash Balance</h3>
-          <div className="flex items-center gap-2 bg-[#8cf3f3] text-[#002020] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-            <Icon name="auto_awesome" className="text-xs" />
-            Live Prediction
-          </div>
-        </div>
-        <div className="flex gap-2 p-1 bg-[#f2f4f6] rounded-lg">
-          {["Scenario A", "Scenario B", "Historical"].map((s) => (
-            <button
-              key={s}
-              onClick={() => setActiveScenario(s)}
-              className={`px-4 py-1.5 text-xs font-bold rounded-md transition-colors ${
-                activeScenario === s
-                  ? "bg-white shadow-sm text-[#00426d]"
-                  : "text-[#717881] hover:text-[#00426d]"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="h-80 w-full relative">
-        {/* Y-axis */}
-        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-[10px] font-bold text-gray-300 uppercase py-2">
-          {["$2.0M", "$1.5M", "$1.0M", "$0.5M", "$0.0M"].map((v) => (
-            <span key={v}>{v}</span>
-          ))}
-        </div>
-        {/* Chart */}
-        <div className="ml-12 h-full">
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 800 300">
-            <defs>
-              <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#005A92" stopOpacity="0.1" />
-                <stop offset="100%" stopColor="#005A92" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M0,250 Q100,240 200,260 T400,230 T600,240 T800,220"
-              fill="none"
-              stroke="#717881"
-              strokeDasharray="8,4"
-              strokeWidth="2"
-              opacity="0.3"
-            />
-            <path
-              d="M0,220 C100,210 200,180 300,190 S500,140 600,150 S700,100 800,80"
-              fill="none"
-              stroke="#005A92"
-              strokeLinecap="round"
-              strokeWidth="3"
-            />
-            <path
-              d="M0,220 C100,210 200,180 300,190 S500,140 600,150 S700,100 800,80 V300 H0 Z"
-              fill="url(#chartGradient)"
-            />
-            <circle cx="300" cy="190" r="4" fill="#005A92" />
-            <circle cx="600" cy="150" r="4" fill="#005A92" />
-          </svg>
-        </div>
-        {/* X-axis */}
-        <div className="ml-12 mt-4 flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-          {MONTHS.map((m) => <span key={m}>{m}</span>)}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ScenarioPanel({ scenarios, setScenarios }) {
-  const toggle = (i) =>
-    setScenarios((prev) =>
-      prev.map((s, idx) => (idx === i ? { ...s, enabled: !s.enabled } : s))
-    );
-
-  return (
-    <div className="col-span-3 bg-[#f2f4f6] p-8 rounded-xl flex flex-col">
-      <h3 className="text-sm font-bold uppercase tracking-widest text-[#717881] mb-6" style={{ fontFamily: "Manrope" }}>
-        What-If Scenarios
+    <div className={`bg-white dark:bg-slate-800 p-6 rounded-xl border-l-4 ${borderColor} transition-transform hover:-translate-y-1 shadow-sm`}>
+      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-widest uppercase mb-2">
+        {label}
+      </p>
+      <h3 className="text-3xl font-bold text-slate-900 dark:text-white" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        {value}
       </h3>
-      <div className="space-y-6 flex-1">
-        {scenarios.map((s, i) => (
-          <div key={s.title} className="cursor-pointer" onClick={() => toggle(i)}>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-semibold">{s.title}</span>
-              <Toggle enabled={s.enabled} />
-            </div>
-            <p className="text-xs text-[#717881] leading-tight">{s.desc}</p>
+      <div className={`mt-4 flex items-center gap-1 text-[10px] font-semibold ${trendColor}`}>
+        <Icon name={trendIcon} className="text-[14px]" />
+        <span>{trend}</span>
+      </div>
+    </div>
+  );
+}
+
+function BarChart() {
+  const days = [
+    { label: 'Mon', height: 95 },
+    { label: 'Tue', height: 88 },
+    { label: 'Wed', height: 82 },
+    { label: 'Thu', height: 92 },
+    { label: 'Fri', height: 85 },
+    { label: 'Sat', height: 78 },
+    { label: 'Sun', height: 75 },
+  ];
+
+  return (
+    <div className="h-64 flex items-end justify-between gap-4 px-4 border-b border-slate-100 dark:border-slate-700">
+      {days.map((day) => (
+        <div key={day.label} className="w-full flex flex-col items-center gap-2 group">
+          <div
+            className="w-full bg-sky-200 dark:bg-sky-900/30 rounded-t-lg relative group-hover:bg-sky-300 dark:group-hover:bg-sky-800/30 transition-all"
+            style={{ height: `${day.height}%` }}
+          >
+            <div className="absolute inset-x-0 top-0 h-1 bg-sky-900 dark:bg-sky-400 rounded-t-full" />
           </div>
-        ))}
-      </div>
-      <button className="mt-8 py-3 border border-gray-200 rounded-md text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors">
-        Add Custom Variable
-      </button>
+          <span className="text-[10px] font-bold text-slate-400 uppercase">{day.label}</span>
+        </div>
+      ))}
     </div>
   );
 }
 
-function Indicators() {
+function AIInsightCard() {
   return (
-    <div className="col-span-4 flex flex-col gap-4">
-      <h4 className="text-xs font-bold uppercase tracking-widest text-[#717881] px-1">
-        Predictive Indicators
-      </h4>
-      {/* Risk */}
-      <div className="bg-white p-6 rounded-xl border-l-4 border-red-500 flex gap-4 items-start shadow-sm">
-        <div className="w-10 h-10 rounded-full bg-[#ffdad6] flex items-center justify-center shrink-0">
-          <Icon name="warning" className="text-red-600" />
-        </div>
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-red-600 mb-1 block">
-            Low Liquidity Period
-          </span>
-          <h5 className="font-bold text-sm mb-1">June 12 – June 28</h5>
-          <p className="text-xs text-[#717881]">
-            Operating cash projected to drop below $45,000 safety threshold due to quarterly tax liability.
-          </p>
-        </div>
+    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl p-6 rounded-2xl border border-emerald-200 dark:border-emerald-900 shadow-sm">
+      <div className="flex items-center gap-3 mb-4">
+        <Icon name="psychology" className="text-emerald-600 dark:text-emerald-400" filled />
+        <h5 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          AI OBSERVATIONS
+        </h5>
       </div>
-      {/* Opportunity */}
-      <div className="bg-white p-6 rounded-xl border-l-4 border-[#006a6a] flex gap-4 items-start shadow-sm">
-        <div className="w-10 h-10 rounded-full bg-[#8cf3f3] flex items-center justify-center shrink-0">
-          <Icon name="rocket_launch" className="text-[#006a6a]" />
-        </div>
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#006a6a] mb-1 block">
-            Surplus Forecasted
-          </span>
-          <h5 className="font-bold text-sm mb-1">September Q3 Close</h5>
-          <p className="text-xs text-[#717881]">
-            Estimated $320k excess liquidity. Ideal window for reinvestment or high-yield sweep transition.
-          </p>
+      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-4 italic">
+        "Multiple subscriptions (₹12,400) are scheduled for Day 4. Inflow from invoice #2401 is delayed by 2 days
+        based on client history."
+      </p>
+      <div className="bg-emerald-100 dark:bg-emerald-900/30 p-4 rounded-lg">
+        <p className="text-[10px] font-bold text-emerald-900 dark:text-emerald-400 uppercase tracking-widest mb-1">
+          CASH RUNWAY
+        </p>
+        <div className="flex items-end gap-2">
+          <span className="text-3xl font-bold text-emerald-900 dark:text-emerald-400" style={{ fontFamily: 'Manrope, sans-serif' }}>87</span>
+          <span className="text-sm font-medium text-emerald-800 dark:text-emerald-300 mb-1">Days remaining</span>
         </div>
       </div>
     </div>
   );
 }
 
-function Advisory() {
+function SentimentCard() {
   return (
-    <div className="col-span-8 bg-gradient-to-br from-[#005a92] to-[#00426d] p-10 rounded-2xl relative overflow-hidden text-white">
-      <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-        <Icon name="psychology" className="text-9xl" />
+    <div className="bg-sky-900 dark:bg-sky-950 text-white p-6 rounded-2xl shadow-xl">
+      <h5 className="text-[10px] font-bold opacity-70 tracking-widest uppercase mb-4">
+        Net Forecast Sentiment
+      </h5>
+      <div className="flex justify-between items-center">
+        <span className="text-2xl font-bold" style={{ fontFamily: 'Manrope, sans-serif' }}>Stable</span>
+        <Icon name="shield_with_heart" className="text-4xl text-emerald-300" filled />
       </div>
-      <div className="relative z-10 flex flex-col h-full">
-        <div className="flex items-center gap-2 mb-8">
-          <Icon name="lightbulb" />
-          <h3 className="text-xl font-bold" style={{ fontFamily: "Manrope" }}>AI Strategic Advisory</h3>
-        </div>
-        <div className="grid grid-cols-2 gap-8">
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-[#8cf3f3] mb-4">
-              Cash Position Optimization
-            </h4>
-            <ul className="space-y-4">
-              {[
-                "Negotiate Net-60 terms with Tier 1 suppliers starting in May to preserve Q2 liquidity.",
-                "Accelerate Q3 receivables through early-payment incentives (1.5% discount) to mitigate June gap.",
-              ].map((text, i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="text-[#8cf3f3] font-bold">0{i + 1}.</span>
-                  <p className="text-sm opacity-90">{text}</p>
-                </li>
+      <div className="mt-4 w-full bg-white/20 h-1 rounded-full overflow-hidden">
+        <div className="w-[72%] h-full bg-emerald-300" />
+      </div>
+    </div>
+  );
+}
+
+function DailyBreakdownTable() {
+  const dailyData = [
+    { day: 'Monday',    inflow: '+ ₹45,000', outflow: '- ₹12,000', netWidth: 65, netColor: 'bg-emerald-600', balance: '₹1,91,200' },
+    { day: 'Tuesday',   inflow: '+ ₹0',      outflow: '- ₹24,500', netWidth: 30, netColor: 'bg-red-500',     balance: '₹1,66,700' },
+    { day: 'Wednesday', inflow: '+ ₹12,000', outflow: '- ₹18,400', netWidth: 45, netColor: 'bg-amber-500',   balance: '₹1,60,300' },
+    { day: 'Thursday',  inflow: '+ ₹4,500',  outflow: '- ₹2,100',  netWidth: 55, netColor: 'bg-emerald-600', balance: '₹1,62,700' },
+    { day: 'Friday',    inflow: '+ ₹0',      outflow: '- ₹8,400',  netWidth: 20, netColor: 'bg-red-500',     balance: '₹1,54,300' },
+    { day: 'Saturday',  inflow: '+ ₹0',      outflow: '- ₹4,200',  netWidth: 15, netColor: 'bg-red-500',     balance: '₹1,50,100' },
+    { day: 'Sunday',    inflow: '+ ₹0',      outflow: '- ₹4,669',  netWidth: 10, netColor: 'bg-red-500',     balance: '₹1,45,431' },
+  ];
+
+  return (
+    <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 shadow-sm border border-slate-50 dark:border-slate-700">
+      <div className="flex items-center justify-between mb-8">
+        <h4 className="text-lg font-bold text-sky-950 dark:text-sky-400" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          Daily Breakdown
+        </h4>
+        <button className="flex items-center gap-2 text-xs font-bold text-sky-900 dark:text-sky-400 hover:underline transition-colors">
+          <Icon name="download" className="text-sm" />
+          EXPORT REPORT
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-slate-100 dark:border-slate-700">
+              {['Day', 'Projected Inflow', 'Planned Outflow', 'Daily Net', 'Closing Balance'].map((h, i) => (
+                <th key={h} className={`py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ${i === 4 ? 'text-right' : ''}`}>
+                  {h}
+                </th>
               ))}
-            </ul>
-          </div>
-          <div className="border-l border-white/10 pl-8">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-[#8cf3f3] mb-4">
-              Investment Strategy
-            </h4>
-            <p className="text-sm opacity-90 leading-relaxed mb-6">
-              Based on your October surplus, FinSenseAi recommends allocating $150k to short-term T-bills to yield an estimated $4,200 in passive interest without compromising operational agility.
-            </p>
-            <button className="bg-white text-[#00426d] px-6 py-2 rounded-md font-bold text-xs uppercase tracking-widest hover:bg-[#8cf3f3] transition-colors">
-              Execute Reallocation
-            </button>
-          </div>
-        </div>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
+            {dailyData.map((row) => (
+              <tr key={row.day} className="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <td className="py-5 font-bold text-sm text-sky-900 dark:text-sky-300">{row.day}</td>
+                <td className="py-5 text-sm text-emerald-600 dark:text-emerald-400">{row.inflow}</td>
+                <td className="py-5 text-sm text-red-600 dark:text-red-400">{row.outflow}</td>
+                <td className="py-5">
+                  <div className="w-24 bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                    <div className={`h-full ${row.netColor}`} style={{ width: `${row.netWidth}%` }} />
+                  </div>
+                </td>
+                <td className="py-5 text-sm font-bold text-right text-slate-900 dark:text-white">{row.balance}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </section>
   );
 }
 
-function InsightToast({ onClose }) {
-  return (
-    <div className="fixed bottom-8 right-8 bg-white/80 backdrop-blur-xl border border-gray-200 p-4 rounded-xl shadow-2xl flex items-center gap-4 max-w-xs hover:scale-105 transition-transform">
-      <div className="w-10 h-10 rounded-full bg-[#8cf3f3] flex items-center justify-center text-[#002020]">
-        <Icon name="query_stats" />
-      </div>
-      <div className="flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[#717881]">Prediction Integrity</p>
-        <p className="text-xs font-medium">Data updated 4 mins ago based on latest clearing house reconciliations.</p>
-      </div>
-      <button onClick={onClose} className="text-[#717881] hover:text-[#00426d]">
-        <Icon name="close" className="text-sm" />
-      </button>
-    </div>
-  );
-}
+// ── Main Export ───────────────────────────────────────────────────────────────
+export default function CashFlowForecast() {
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-export default function PrecisionLedger() {
-  const [activeScenario, setActiveScenario] = useState("Scenario A");
-  const [scenarios, setScenarios] = useState(SCENARIOS);
-  const [toastVisible, setToastVisible] = useState(true);
+  // Load fonts
+  useEffect(() => {
+    const fonts = document.createElement('link');
+    fonts.href = 'https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap';
+    fonts.rel = 'stylesheet';
+    document.head.appendChild(fonts);
+
+    const symbols = document.createElement('link');
+    symbols.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap';
+    symbols.rel = 'stylesheet';
+    document.head.appendChild(symbols);
+  }, []);
 
   return (
-    <>
-      {/* Google Fonts + Material Symbols */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
-        rel="stylesheet"
-      />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet"
-      />
+    <div className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen">
 
-      <div className="bg-[#f7f9fb] text-[#191c1e] min-h-screen" style={{ fontFamily: "Inter" }}>
-        <Sidebar />
-        <TopBar />
+      {/* ── Shared Sidebar (same as Dashboard/Analyze/NewEntry) ── */}
+      <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
-        <main className="ml-64 min-h-screen pt-24 px-12 pb-12">
-          {/* Hero Header */}
-          <div className="grid grid-cols-12 gap-8 mb-16 items-end">
-            <div className="col-span-8">
-              <p className="uppercase tracking-widest text-xs text-[#006a6a] mb-2">
-                Predictions &amp; Strategy
-              </p>
-              <h2
-                className="text-5xl font-extrabold tracking-tighter mb-4"
-                style={{ fontFamily: "Manrope" }}
-              >
-                12-Month Forecast
-              </h2>
-              <p className="text-[#717881] max-w-xl leading-relaxed">
-                Our AI analyzes historical trends, market volatility, and seasonal cycles to project your liquidity with 98.4% accuracy.
-              </p>
-            </div>
-            <div className="col-span-4 text-right">
-              <div className="inline-flex flex-col items-end">
-                <span className="text-xs uppercase tracking-widest text-[#717881] mb-1">
-                  Total Predicted Liquidity (EOY)
-                </span>
-                <span
-                  className="text-6xl font-extrabold text-[#005a92] tabular-nums"
-                  style={{ fontFamily: "Manrope" }}
-                >
-                  $1,420,500
-                </span>
-                <div className="flex items-center gap-2 text-[#006a6a] mt-2">
-                  <Icon name="trending_up" className="text-sm" />
-                  <span className="text-sm font-bold">+12.4% vs Last Year</span>
+      <div className="md:ml-64 flex flex-col min-h-screen">
+        <TopAppBar onMenuClick={() => setMobileOpen(true)} />
+
+        <main className="pt-24 pb-12 px-4 md:px-8 min-h-screen">
+
+          {/* Metrics Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <MetricCard
+              label="Starting Balance"
+              value="₹1,58,200"
+              trend="Last updated 2h ago"
+              trendIcon="trending_up"
+              trendColor="text-emerald-600 dark:text-emerald-400"
+              borderColor="border-sky-900 dark:border-sky-400"
+            />
+            <MetricCard
+              label="Projected Day 7"
+              value="₹1,45,431"
+              trend="-8.1% vs Current"
+              trendIcon="trending_down"
+              trendColor="text-red-600 dark:text-red-400"
+              borderColor="border-emerald-600 dark:border-emerald-400"
+            />
+            <MetricCard
+              label="Daily Burn Rate"
+              value="₹1,806"
+              trend="Predictive Average"
+              trendIcon="bolt"
+              trendColor="text-slate-500 dark:text-slate-400"
+              borderColor="border-purple-600 dark:border-purple-400"
+            />
+            <MetricCard
+              label="Min. Balance Found"
+              value="₹1,45,431"
+              trend="Safe liquidity threshold"
+              trendIcon="verified_user"
+              trendColor="text-teal-600 dark:text-teal-400"
+              borderColor="border-sky-600 dark:border-sky-400"
+            />
+          </div>
+
+          {/* Chart + Insights */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 mb-12 items-start">
+            <div className="lg:col-span-8 bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-700">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                <div>
+                  <h4 className="text-lg font-bold text-sky-950 dark:text-sky-400" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                    7-Day Balance Projection
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Visualizing upcoming inflows and mandatory payouts
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="px-3 py-1 text-[10px] font-bold border border-slate-300 dark:border-slate-600 rounded-full text-slate-500 dark:text-slate-400 uppercase tracking-tighter hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    Daily
+                  </button>
+                  <button className="px-3 py-1 text-[10px] font-bold bg-sky-900 dark:bg-sky-700 text-white rounded-full uppercase tracking-tighter shadow-sm hover:bg-sky-800 dark:hover:bg-sky-600">
+                    Weekly
+                  </button>
                 </div>
               </div>
+              <BarChart />
+            </div>
+
+            <div className="lg:col-span-4 flex flex-col gap-6">
+              <AIInsightCard />
+              <SentimentCard />
             </div>
           </div>
 
-          {/* Bento Grid */}
-          <div className="grid grid-cols-12 gap-6 mb-12">
-            <ForecastChart activeScenario={activeScenario} setActiveScenario={setActiveScenario} />
-            <ScenarioPanel scenarios={scenarios} setScenarios={setScenarios} />
-          </div>
-
-          {/* Strategic Indicators */}
-          <div className="grid grid-cols-12 gap-8">
-            <Indicators />
-            <Advisory />
-          </div>
+          {/* Breakdown Table */}
+          <DailyBreakdownTable />
         </main>
-
-        {toastVisible && <InsightToast onClose={() => setToastVisible(false)} />}
       </div>
-    </>
+
+      {/* FAB */}
+      <button className="fixed bottom-8 right-8 h-14 w-14 rounded-full bg-sky-900 dark:bg-sky-700 text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 hover:bg-sky-800 dark:hover:bg-sky-600">
+        <Icon name="add" className="text-[28px]" filled />
+      </button>
+    </div>
   );
 }
