@@ -1,4 +1,4 @@
-const { sendMessage } = require("../services/finbotService");
+const { sendMessage } = require("../services/FinBotService");
 const Transaction = require("../models/transactionModel");
 
 const chatWithBot = async (req, res) => {
