@@ -4,7 +4,7 @@ import LoginPage from "./pages/Login";
 import Signup from "./pages/Signup";
 import DashboardPage from "./pages/Dashboardpage";
 import AnalyzeTransaction from "./pages/Analyze";
-import PrecisionLedger from "./pages/Cashflowpred";
+import CashFlowForecast  from "./pages/Cashflowpred";
 import FinBotAI from "./pages/FinBot";
 import NewEntry from "./pages/Newentry";
 import HelpSupport from "./pages/Help";
@@ -17,7 +17,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/analyze" element={<AnalyzeTransaction />} />
-        <Route path="/cash-flow" element={<PrecisionLedger />} />
+        <Route path="/cash-flow" element={<CashFlowForecast />} />
         <Route path="/finbot" element={<FinBotAI />} />
         <Route path="/new-entry" element={<NewEntry />} />
         <Route path="/reports" element={<DashboardPage />} />
