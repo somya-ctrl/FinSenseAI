@@ -365,7 +365,9 @@ function ErrorBanner({ message, onRetry }) {
 }
 
 // ── Main Export ───────────────────────────────────────────────────────────────
-export default function CashFlowForecast({ businessId = DEFAULT_BUSINESS_ID }) {
+
+  export default function CashFlowForecast() {
+  const businessId = localStorage.getItem('businessId');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [forecastDays, setForecastDays] = useState(7);
   const [data, setData] = useState(null);
