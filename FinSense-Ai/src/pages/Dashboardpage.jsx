@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Sidebar, { Icon } from "./Sidebar";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatCurrency = (amount) => {
   if (amount === undefined || amount === null || isNaN(amount)) return "₹0";
@@ -13,6 +14,7 @@ const formatCurrency = (amount) => {
     maximumFractionDigits: 0,
   }).format(amount);
 };
+
 const EMPTY_SUMMARY = {
   total_income: 0,
   total_expense: 0,
@@ -38,6 +40,11 @@ function SkeletonLine() {
 // ── Business ID Input ─────────────────────────────────────────────────────────
 function BusinessIdInput({ onFetch, loading, initialValue = "" }) {
   const [businessId, setBusinessId] = useState(initialValue);
+
+  // Keep input in sync if initialValue changes (e.g. loaded from localStorage)
+  useEffect(() => {
+    if (initialValue) setBusinessId(initialValue);
+  }, [initialValue]);
 
   const handleFetch = () => {
     if (!businessId.trim()) return;
@@ -125,50 +132,6 @@ function StatCard({ label, value, trend, trendUp, trendColor, bg, sparkBars, act
 }
 
 // ── Income vs Expense Chart ───────────────────────────────────────────────────
-// function IncomeVsExpenseChart({ totalIncome, totalExpense, isLoading }) {
-//   const maxValue = Math.max(totalIncome || 0, totalExpense || 0);
-//   const incomeHeight  = maxValue > 0 ? ((totalIncome  || 0) / maxValue) * 100 : 0;
-//   const expenseHeight = maxValue > 0 ? ((totalExpense || 0) / maxValue) * 100 : 0;
-
-//   return (
-//     <div className="col-span-2 bg-white p-8 rounded-xl" style={{ boxShadow: "0 40px 40px -20px rgba(25,28,30,0.06)" }}>
-//       <div className="flex justify-between items-center mb-8">
-//         <div>
-//           <h3 className="text-lg font-bold text-[#191c1e]" style={{ fontFamily: "Manrope, sans-serif" }}>Income vs Expenses</h3>
-//           <p className="text-xs text-slate-400">Monthly comparison</p>
-//         </div>
-//         <div className="flex gap-4">
-//           <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#00426d]">
-//             <span className="w-2 h-2 rounded-full bg-[#00426d] inline-block" /> Income
-//           </span>
-//           <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-500">
-//             <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Expense
-//           </span>
-//         </div>
-//       </div>
-//       <div className="h-64 relative flex items-end justify-around px-4 pb-8">
-//         <div className="relative w-24 flex flex-col items-center">
-//           {isLoading ? <SkeletonBar /> : (
-//             <>
-//               <div className="w-full rounded-t-lg bg-[#00426d] transition-all duration-500" style={{ height: `${incomeHeight}%` }} />
-//               <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase text-[#00426d]">Income</span>
-//               <span className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">{formatCurrency(totalIncome)}</span>
-//             </>
-//           )}
-//         </div>
-//         <div className="relative w-24 flex flex-col items-center">
-//           {isLoading ? <SkeletonBar /> : (
-//             <>
-//               <div className="w-full rounded-t-lg bg-red-500 transition-all duration-500" style={{ height: `${expenseHeight}%` }} />
-//               <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase text-red-500">Expense</span>
-//               <span className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">{formatCurrency(totalExpense)}</span>
-//             </>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
 function IncomeVsExpenseChart({ totalIncome, totalExpense, isLoading }) {
   const maxValue = Math.max(totalIncome || 0, totalExpense || 0, 1);
   const incomeHeight = ((totalIncome || 0) / maxValue) * 180;
@@ -200,7 +163,6 @@ function IncomeVsExpenseChart({ totalIncome, totalExpense, isLoading }) {
         </div>
       </div>
 
-      {/* Chart area */}
       <div className="h-[260px] flex items-end justify-center gap-24 border-b border-slate-200 pb-6 relative">
         {isLoading ? (
           <>
@@ -209,7 +171,6 @@ function IncomeVsExpenseChart({ totalIncome, totalExpense, isLoading }) {
           </>
         ) : (
           <>
-            {/* Income Bar */}
             <div className="flex flex-col items-center justify-end h-full">
               <div className="text-xs font-bold text-[#00426d] mb-2">
                 {formatCurrency(totalIncome)}
@@ -223,7 +184,6 @@ function IncomeVsExpenseChart({ totalIncome, totalExpense, isLoading }) {
               </span>
             </div>
 
-            {/* Expense Bar */}
             <div className="flex flex-col items-center justify-end h-full">
               <div className="text-xs font-bold text-red-500 mb-2">
                 {formatCurrency(totalExpense)}
@@ -242,12 +202,13 @@ function IncomeVsExpenseChart({ totalIncome, totalExpense, isLoading }) {
     </div>
   );
 }
+
 // ── Key Metrics Cards ─────────────────────────────────────────────────────────
 function KeyMetricsCards({ netBalance, profitMargin, savingsRate, isLoading }) {
   const metrics = [
-    { label: "Net Profit",     value: formatCurrency(netBalance),   icon: "trending_up", color: (netBalance   || 0) >= 0 ? "text-[#006a6a]" : "text-red-500", bgColor: (netBalance   || 0) >= 0 ? "bg-[#006a6a]/10" : "bg-red-500/10" },
-    { label: "Profit Margin",  value: `${profitMargin ?? 0}%`,      icon: "percent",     color: (profitMargin || 0) >= 0 ? "text-[#00426d]" : "text-red-500", bgColor: (profitMargin || 0) >= 0 ? "bg-[#00426d]/10" : "bg-red-500/10" },
-    { label: "Savings Rate",   value: `${savingsRate ?? 0}%`,       icon: "savings",     color: (savingsRate  || 0) >= 0 ? "text-green-600" : "text-orange-500", bgColor: (savingsRate  || 0) >= 0 ? "bg-green-600/10" : "bg-orange-500/10" },
+    { label: "Net Profit",    value: formatCurrency(netBalance),  icon: "trending_up", color: (netBalance   || 0) >= 0 ? "text-[#006a6a]" : "text-red-500", bgColor: (netBalance   || 0) >= 0 ? "bg-[#006a6a]/10" : "bg-red-500/10" },
+    { label: "Profit Margin", value: `${profitMargin ?? 0}%`,     icon: "percent",     color: (profitMargin || 0) >= 0 ? "text-[#00426d]" : "text-red-500", bgColor: (profitMargin || 0) >= 0 ? "bg-[#00426d]/10" : "bg-red-500/10" },
+    { label: "Savings Rate",  value: `${savingsRate ?? 0}%`,      icon: "savings",     color: (savingsRate  || 0) >= 0 ? "text-green-600" : "text-orange-500", bgColor: (savingsRate  || 0) >= 0 ? "bg-green-600/10" : "bg-orange-500/10" },
   ];
   return (
     <div className="col-span-2 grid grid-cols-3 gap-4">
@@ -435,14 +396,32 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState("");
-  const [fetchedId,      setFetchedId]      = useState("");
+  // Pre-populate from localStorage so the input shows the last-used business
+  const [fetchedId,      setFetchedId]      = useState(
+    () => localStorage.getItem("businessId") || ""
+  );
   const [mobileOpen,     setMobileOpen]     = useState(false);
+
+  // ── On mount: if a businessId is already saved, auto-fetch it ──────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("businessId");
+    if (saved) handleFetch(saved);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleFetch = async (id) => {
     setLoading(true);
     setError("");
-    // setSummary(null);
     setFetchedId(id);
+
+    // ✅ 1. Save to localStorage — CashFlowForecast reads this
+    localStorage.setItem("businessId", id);
+
+    // ✅ 2. Fire custom event — CashFlowForecast listens for instant update
+    window.dispatchEvent(new CustomEvent("businessChanged", {
+      detail: { businessId: id },
+    }));
+
     try {
       const res = await axios.get(`${API_BASE_URL}/overview/summary/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -460,7 +439,6 @@ export default function DashboardPage() {
       <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
-      {/* ── Shared Sidebar ── */}
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       <main className="md:ml-64 flex-1 p-8 lg:p-12 min-h-screen">
@@ -493,8 +471,14 @@ export default function DashboardPage() {
           )}
         </header>
 
-        {/* Business ID input */}
-        <BusinessIdInput onFetch={handleFetch} loading={loading} initialValue={fetchedId} />
+        {/* Business ID input — now also drives Cash Flow page */}
+        <div className="mb-2">
+          <BusinessIdInput onFetch={handleFetch} loading={loading} initialValue={fetchedId} />
+          <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest -mt-4 ml-1">
+            <Icon name="info" className="text-[12px] align-middle mr-1" />
+            Selecting a Business ID here will also update the Cash Flow Forecast page.
+          </p>
+        </div>
 
         {/* Error */}
         {error && (
@@ -504,7 +488,7 @@ export default function DashboardPage() {
         )}
 
         {/* Dashboard Grid */}
-        <div className="grid grid-cols-12 gap-8">
+        <div className="grid grid-cols-12 gap-8 mt-6">
           <section className="col-span-12 lg:col-span-8 grid grid-cols-2 gap-8">
             <StatCard
               label="Total Revenue (MTD)"

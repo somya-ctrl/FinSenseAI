@@ -3,7 +3,7 @@ import Sidebar, { Icon } from './Sidebar';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const API_BASE = 'http://localhost:3000';
-const DEFAULT_BUSINESS_ID = 'BIZ_001'; // fallback if localStorage is empty
+const DEFAULT_BUSINESS_ID = 'BIZ_001';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatINR(amount) {
@@ -20,16 +20,6 @@ function dayLabel(index) {
   return days[d.getDay()];
 }
 
-/**
- * Normalise one daily entry from the API into the shape the UI expects.
- *
- * API shape:  { day, net_cashflow, balance }
- * UI shape:   { day, inflow, outflow, net, predicted_balance }
- *
- * The API does not return separate inflow/outflow, so we derive them from
- * net_cashflow:  positive net → inflow, zero outflow
- *                negative net → outflow, zero inflow
- */
 function normaliseDay(d, index) {
   const net = d.net_cashflow ?? 0;
   return {
@@ -38,7 +28,6 @@ function normaliseDay(d, index) {
     outflow: net < 0 ? Math.abs(net) : 0,
     net,
     predicted_balance: d.balance ?? d.predicted_balance ?? null,
-    // keep originals for debugging
     _raw: d,
   };
 }
@@ -139,8 +128,6 @@ function BarChart({ daily, loading }) {
     );
   }
 
-  // Use absolute balance for bar height; negative balances still render as
-  // a minimum-height bar so the chart doesn't look empty.
   const balances = daily.map((d) => d.predicted_balance ?? 0);
   const maxAbs = Math.max(...balances.map(Math.abs), 1);
 
@@ -152,7 +139,6 @@ function BarChart({ daily, loading }) {
         const heightPct = Math.max(8, (Math.abs(balance) / maxAbs) * 100);
         return (
           <div key={i} className="w-full flex flex-col items-center gap-2 group relative">
-            {/* Tooltip */}
             <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
               Day {day.day}: {formatINR(balance)}
             </div>
@@ -177,12 +163,6 @@ function BarChart({ daily, loading }) {
 }
 
 function AIInsightCard({ insights, summary, alert, runway, loading }) {
-  // Pick highest-severity insight message
-  const primaryInsight =
-    insights?.find((i) => i.severity === 'warning')?.message ??
-    insights?.[0]?.message ??
-    null;
-
   return (
     <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl p-6 rounded-2xl border border-emerald-200 dark:border-emerald-900 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
@@ -200,7 +180,6 @@ function AIInsightCard({ insights, summary, alert, runway, loading }) {
         </div>
       ) : (
         <>
-          {/* Forecast alert (from forecast.alert) */}
           {alert && (
             <div className="mb-3 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
               <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-[16px] mt-0.5">warning</span>
@@ -208,7 +187,6 @@ function AIInsightCard({ insights, summary, alert, runway, loading }) {
             </div>
           )}
 
-          {/* All insight pills */}
           {insights?.length > 0 && (
             <div className="space-y-2 mb-4">
               {insights.map((ins, i) => (
@@ -237,7 +215,6 @@ function AIInsightCard({ insights, summary, alert, runway, loading }) {
         </>
       )}
 
-      {/* Cash Runway — derived: startingBalance / avgDailyOutflow */}
       <div className="bg-emerald-100 dark:bg-emerald-900/30 p-4 rounded-lg">
         <p className="text-[10px] font-bold text-emerald-900 dark:text-emerald-400 uppercase tracking-widest mb-1">
           CASH RUNWAY
@@ -260,7 +237,6 @@ function AIInsightCard({ insights, summary, alert, runway, loading }) {
 }
 
 function SentimentCard({ confidencePct, forecastSummaryText, loading }) {
-  // Derive a simple sentiment label from the forecast summary string or confidence
   const pct = confidencePct ?? 0;
   const sentiment =
     pct >= 75 ? 'Positive' :
@@ -306,13 +282,7 @@ function DailyBreakdownTable({ daily, loading, forecastDays }) {
     if (!daily?.length) return;
     const rows = [['Day', 'Net Cashflow', 'Inflow (derived)', 'Outflow (derived)', 'Closing Balance']];
     daily.forEach((d) => {
-      rows.push([
-        `Day ${d.day}`,
-        d.net,
-        d.inflow,
-        d.outflow,
-        d.predicted_balance ?? '',
-      ]);
+      rows.push([`Day ${d.day}`, d.net, d.inflow, d.outflow, d.predicted_balance ?? '']);
     });
     const csv = rows.map((r) => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -325,9 +295,7 @@ function DailyBreakdownTable({ daily, loading, forecastDays }) {
   };
 
   const skeletonRows = Array.from({ length: forecastDays || 7 });
-  const maxAbsNet = daily?.length
-    ? Math.max(1, ...daily.map((d) => Math.abs(d.net ?? 0)))
-    : 1;
+  const maxAbsNet = daily?.length ? Math.max(1, ...daily.map((d) => Math.abs(d.net ?? 0))) : 1;
 
   const rows = loading
     ? skeletonRows.map((_, i) => ({ day: `Day ${i + 1}`, _loading: true }))
@@ -362,10 +330,7 @@ function DailyBreakdownTable({ daily, loading, forecastDays }) {
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-700">
               {['Day', 'Est. Inflow', 'Est. Outflow', 'Net Cashflow', 'Closing Balance'].map((h, i) => (
-                <th
-                  key={h}
-                  className={`py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ${i === 4 ? 'text-right' : ''}`}
-                >
+                <th key={h} className={`py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ${i === 4 ? 'text-right' : ''}`}>
                   {h}
                 </th>
               ))}
@@ -375,46 +340,32 @@ function DailyBreakdownTable({ daily, loading, forecastDays }) {
             {rows.map((row, i) => (
               <tr key={i} className="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                 <td className="py-5 font-bold text-sm text-sky-900 dark:text-sky-300">{row.day}</td>
-
-                {/* Inflow */}
                 <td className="py-5 text-sm text-emerald-600 dark:text-emerald-400">
-                  {row._loading
-                    ? <div className="h-3 w-20 bg-slate-100 dark:bg-slate-700 rounded animate-pulse" />
-                    : row.inflow > 0 ? `+ ${formatINR(row.inflow)}` : '—'}
+                  {row._loading ? <div className="h-3 w-20 bg-slate-100 dark:bg-slate-700 rounded animate-pulse" /> : row.inflow > 0 ? `+ ${formatINR(row.inflow)}` : '—'}
                 </td>
-
-                {/* Outflow */}
                 <td className="py-5 text-sm text-red-600 dark:text-red-400">
-                  {row._loading
-                    ? <div className="h-3 w-20 bg-slate-100 dark:bg-slate-700 rounded animate-pulse" />
-                    : row.outflow > 0 ? `- ${formatINR(row.outflow)}` : '—'}
+                  {row._loading ? <div className="h-3 w-20 bg-slate-100 dark:bg-slate-700 rounded animate-pulse" /> : row.outflow > 0 ? `- ${formatINR(row.outflow)}` : '—'}
                 </td>
-
-                {/* Net bar */}
                 <td className="py-5">
-                  {row._loading
-                    ? <div className="h-1.5 w-24 bg-slate-100 dark:bg-slate-700 rounded-full animate-pulse" />
-                    : (
-                      <div className="flex items-center gap-2">
-                        <div className="w-20 bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                          <div className={`h-full ${row.netColor}`} style={{ width: `${row.netWidth}%` }} />
-                        </div>
-                        <span className={`text-xs font-semibold ${(row.net ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                          {formatINR(row.net)}
-                        </span>
+                  {row._loading ? (
+                    <div className="h-1.5 w-24 bg-slate-100 dark:bg-slate-700 rounded-full animate-pulse" />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                        <div className={`h-full ${row.netColor}`} style={{ width: `${row.netWidth}%` }} />
                       </div>
-                    )}
-                </td>
-
-                {/* Closing balance */}
-                <td className="py-5 text-sm font-bold text-right text-slate-900 dark:text-white">
-                  {row._loading
-                    ? <div className="h-3 w-24 bg-slate-100 dark:bg-slate-700 rounded animate-pulse ml-auto" />
-                    : (
-                      <span className={(row.balance ?? 0) < 0 ? 'text-red-500' : ''}>
-                        {formatINR(row.balance)}
+                      <span className={`text-xs font-semibold ${(row.net ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {formatINR(row.net)}
                       </span>
-                    )}
+                    </div>
+                  )}
+                </td>
+                <td className="py-5 text-sm font-bold text-right text-slate-900 dark:text-white">
+                  {row._loading ? (
+                    <div className="h-3 w-24 bg-slate-100 dark:bg-slate-700 rounded animate-pulse ml-auto" />
+                  ) : (
+                    <span className={(row.balance ?? 0) < 0 ? 'text-red-500' : ''}>{formatINR(row.balance)}</span>
+                  )}
                 </td>
               </tr>
             ))}
@@ -445,13 +396,17 @@ function ErrorBanner({ message, onRetry }) {
 
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function CashFlowForecast() {
-  const businessId = localStorage.getItem('businessId') || DEFAULT_BUSINESS_ID;
 
-  const [mobileOpen, setMobileOpen]   = useState(false);
+  // ✅ Read once from localStorage on mount
+  const [businessId, setBusinessId] = useState(
+    () => localStorage.getItem('businessId') || DEFAULT_BUSINESS_ID
+  );
+
+  const [mobileOpen, setMobileOpen]     = useState(false);
   const [forecastDays, setForecastDays] = useState(7);
-  const [data, setData]               = useState(null);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState(null);
+  const [data, setData]                 = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(null);
 
   // Load fonts
   useEffect(() => {
@@ -466,8 +421,21 @@ export default function CashFlowForecast() {
     document.head.appendChild(symbols);
   }, []);
 
+  // ✅ Listen for businessChanged event fired by Sidebar — instant, no polling
+  useEffect(() => {
+    const handleBusinessChange = (e) => {
+      if (e.detail?.businessId) {
+        setBusinessId(e.detail.businessId);
+      }
+    };
+    window.addEventListener('businessChanged', handleBusinessChange);
+    return () => window.removeEventListener('businessChanged', handleBusinessChange);
+  }, []);
+
+  // ✅ fetchForecast re-runs whenever businessId or forecastDays changes
   const fetchForecast = useCallback(async () => {
     setLoading(true);
+    setData(null);
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/api/cashflow/predict`, {
@@ -493,52 +461,31 @@ export default function CashFlowForecast() {
 
   useEffect(() => { fetchForecast(); }, [fetchForecast]);
 
-  // ── Derived / normalised values from API ─────────────────────────────────
-
-  // Normalise daily entries to the shape the UI expects
-  const rawDaily  = data?.forecast?.daily ?? [];
-  const daily     = rawDaily.map(normaliseDay);
-
-  // Forecast-level fields
+  // ── Derived values ────────────────────────────────────────────────────────
+  const rawDaily          = data?.forecast?.daily ?? [];
+  const daily             = rawDaily.map(normaliseDay);
   const minBalance        = data?.forecast?.min_balance ?? null;
   const forecastAlert     = data?.forecast?.alert ?? null;
-  const forecastSummaryTx = data?.forecast?.summary ?? null;   // plain string from API
-
-  // Insights array
-  const insights  = data?.insights ?? [];
-
-  // Summary object (confidence_pct, key_insight, forecast_alert…)
-  const summary   = data?.summary ?? {};
-  const confidencePct = summary.confidence_pct ?? null;
-
-  // Starting balance from the most recent transaction
+  const forecastSummaryTx = data?.forecast?.summary ?? null;
+  const insights          = data?.insights ?? [];
+  const summary           = data?.summary ?? {};
+  const confidencePct     = summary.confidence_pct ?? null;
   const startingBalance   = data?.transaction?.balance ?? null;
+  const projectedBalance  = daily.length ? daily[daily.length - 1]?.predicted_balance ?? null : null;
 
-  // Projected balance = last day's closing balance
-  const projectedBalance  = daily.length
-    ? daily[daily.length - 1]?.predicted_balance ?? null
-    : null;
-
-  // Percentage change over the forecast window
   const pctChange = startingBalance && projectedBalance
     ? (((projectedBalance - startingBalance) / Math.abs(startingBalance)) * 100).toFixed(1)
     : null;
 
-  // Daily burn rate = average |net_cashflow| over negative days
-  const negativeDays  = daily.filter((d) => d.net < 0);
-  const totalOutflow  = daily.reduce((acc, d) => acc + d.outflow, 0);
-  const burnRate      = daily.length ? Math.round(totalOutflow / daily.length) : null;
-
-  // Rough cash runway: how many days at burn rate before balance hits 0
-  const runway = (startingBalance != null && burnRate && burnRate > 0)
+  const totalOutflow = daily.reduce((acc, d) => acc + d.outflow, 0);
+  const burnRate     = daily.length ? Math.round(totalOutflow / daily.length) : null;
+  const runway       = (startingBalance != null && burnRate && burnRate > 0)
     ? Math.max(0, Math.floor(startingBalance / burnRate))
     : null;
 
   return (
     <div className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen">
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
@@ -569,17 +516,9 @@ export default function CashFlowForecast() {
             <MetricCard
               label={`Projected Day ${forecastDays}`}
               value={formatINR(projectedBalance)}
-              trend={
-                pctChange != null
-                  ? `${pctChange > 0 ? '+' : ''}${pctChange}% vs current`
-                  : 'Calculating…'
-              }
+              trend={pctChange != null ? `${pctChange > 0 ? '+' : ''}${pctChange}% vs current` : 'Calculating…'}
               trendIcon={pctChange >= 0 ? 'trending_up' : 'trending_down'}
-              trendColor={
-                pctChange >= 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-red-600 dark:text-red-400'
-              }
+              trendColor={pctChange >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}
               borderColor="border-emerald-600 dark:border-emerald-400"
               loading={loading}
             />
@@ -597,16 +536,8 @@ export default function CashFlowForecast() {
               value={formatINR(minBalance)}
               trend="Lowest projected point"
               trendIcon="verified_user"
-              trendColor={
-                (minBalance ?? 0) < 0
-                  ? 'text-red-600 dark:text-red-400'
-                  : 'text-teal-600 dark:text-teal-400'
-              }
-              borderColor={
-                (minBalance ?? 0) < 0
-                  ? 'border-red-500'
-                  : 'border-sky-600 dark:border-sky-400'
-              }
+              trendColor={(minBalance ?? 0) < 0 ? 'text-red-600 dark:text-red-400' : 'text-teal-600 dark:text-teal-400'}
+              borderColor={(minBalance ?? 0) < 0 ? 'border-red-500' : 'border-sky-600 dark:border-sky-400'}
               loading={loading}
             />
           </div>
@@ -623,7 +554,6 @@ export default function CashFlowForecast() {
                     Closing balance trajectory over the forecast window
                   </p>
                 </div>
-                {/* Mobile day switcher */}
                 <div className="flex gap-2 md:hidden">
                   {[7, 14, 30].map((d) => (
                     <button
@@ -640,9 +570,9 @@ export default function CashFlowForecast() {
                   ))}
                 </div>
               </div>
+
               <BarChart daily={daily} loading={loading} />
 
-              {/* Legend */}
               {!loading && daily.length > 0 && (
                 <div className="flex items-center gap-6 mt-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                   <span className="flex items-center gap-1.5">
@@ -671,12 +601,10 @@ export default function CashFlowForecast() {
             </div>
           </div>
 
-          {/* Breakdown Table */}
           <DailyBreakdownTable daily={daily} loading={loading} forecastDays={forecastDays} />
         </main>
       </div>
 
-      {/* FAB */}
       <button className="fixed bottom-8 right-8 h-14 w-14 rounded-full bg-sky-900 dark:bg-sky-700 text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 hover:bg-sky-800 dark:hover:bg-sky-600">
         <Icon name="add" className="text-[28px]" filled />
       </button>
