@@ -1,8 +1,7 @@
-
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ReactMarkdownn from "react-markdown";
+import ReactMarkdown from "react-markdown";
+import Sidebar from './Sidebar'; // Import existing Sidebar component
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
@@ -15,73 +14,16 @@ const Icon = ({ name, fill = false, className = '' }) => (
   </span>
 );
 
-const navItems = [
-  { icon: 'dashboard', label: 'Overview', href: '#', path: '/overview' },
-  { icon: 'account_balance_wallet', label: 'Cash Flow Prediction', href: '#', path: '/cash-flow' },
-  { icon: 'description', label: 'Analyze Transaction', href: '#', path: '/analyze' },
-  { icon: 'psychology', label: 'FinBot', href: '#', path: '/finbot', active: true },
-  { icon: 'payments', label: 'Reports', href: '#', path: '/reports' },
-  { icon: 'settings', label: 'Settings', href: '#', path: '/settings' },
-];
-
-function Sidebar({ onSignOut }) {
+function TopAppBar({ onMenuClick }) {
   return (
-    <aside className="fixed left-0 top-0 h-full flex flex-col p-4 z-40 w-64 border-r-0 bg-slate-100 dark:bg-slate-900 font-['Manrope'] antialiased tracking-tight">
-      <div className="mb-8 px-2">
-        <h1 className="text-lg tracking-tighter text-sky-950 dark:text-sky-100 uppercase">
-          <span className="font-normal">FINSENSE</span>
-          <span className="font-bold">AI</span>
-        </h1>
-        <p className="text-[10px] font-bold tracking-[0.1em] text-slate-500 uppercase mt-0.5">
-          Small Biz Edition
-        </p>
-      </div>
-
-      <button className="w-full py-3 mb-8 bg-sky-900 dark:bg-sky-700 text-white font-bold rounded-lg text-xs tracking-widest transition-transform active:scale-95 shadow-sm hover:bg-sky-800 dark:hover:bg-sky-600">
-        NEW ENTRY
-      </button>
-
-      <nav className="flex-1 space-y-1">
-        {navItems.map((item) => (
-          <a
-            key={item.label}
-            href={item.href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
-              item.active
-                ? 'bg-white dark:bg-slate-800 text-sky-900 dark:text-sky-300 font-semibold shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
-            }`}
-          >
-            <Icon name={item.icon} className="text-[20px]" />
-            <span className="text-sm font-medium">{item.label}</span>
-          </a>
-        ))}
-      </nav>
-
-      <div className="pt-4 mt-auto border-t border-slate-200 dark:border-slate-800 space-y-1">
-        <a
-          href="#"
-          className="flex items-center gap-3 px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:text-sky-800 dark:hover:text-sky-200 transition-colors duration-200 rounded-lg"
-        >
-          <Icon name="help" className="text-[20px]" />
-          <span className="text-sm font-medium">Help Center</span>
-        </a>
+    <header className="flex items-center justify-between px-4 md:px-8 py-4 fixed top-0 left-0 right-0 lg:ml-64 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl z-30 font-['Manrope'] text-sm font-medium border-b border-slate-200 dark:border-slate-800">
+      <div className="flex items-center gap-4">
         <button
-          onClick={onSignOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 rounded-lg text-left"
+          onClick={onMenuClick}
+          className="md:hidden p-2 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors"
         >
-          <Icon name="logout" className="text-[20px]" />
-          <span className="text-sm font-medium">Sign Out</span>
+          <Icon name="menu" className="text-[24px]" />
         </button>
-      </div>
-    </aside>
-  );
-}
-
-function TopAppBar() {
-  return (
-    <header className="flex items-center justify-between ml-64 px-8 py-4 w-[calc(100%-16rem)] fixed top-0 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl z-30 font-['Manrope'] text-sm font-medium border-b border-slate-200 dark:border-slate-800">
-      <div>
         <h2 className="text-xl font-bold text-sky-900 dark:text-sky-400 tracking-tight uppercase">
           FinBot AI Assistant
         </h2>
@@ -113,7 +55,7 @@ function ChatMessage({ message, isUser }) {
             : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-none'
         }`}
       >
-        <p className="text-sm leading-relaxed"><ReactMarkdownn>{message.content}</ReactMarkdownn></p>
+        <p className="text-sm leading-relaxed"><ReactMarkdown>{message.content}</ReactMarkdown></p>
         <p className={`text-xs mt-2 ${isUser ? 'text-sky-200' : 'text-slate-500 dark:text-slate-400'}`}>
           {new Date(message.timestamp).toLocaleTimeString([], {
             hour: '2-digit',
@@ -161,6 +103,7 @@ function ErrorMessage({ message, onRetry }) {
 
 export default function FinBot() {
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -284,28 +227,6 @@ export default function FinBot() {
     }
   };
 
-  const handleSignOut = async () => {
-    if (window.confirm('Are you sure you want to sign out?')) {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          await fetch(`${API_BASE_URL}/auth/logout`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }).catch(() => {
-            // Continue logout even if API call fails
-          });
-        }
-      } finally {
-        localStorage.clear();
-        navigate('/login');
-      }
-    }
-  };
-
   const handleRetry = () => {
     if (retryMessage) {
       handleSendMessage(retryMessage);
@@ -314,10 +235,12 @@ export default function FinBot() {
 
   return (
     <div className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden min-h-screen">
-      <Sidebar onSignOut={handleSignOut} />
+      {/* Sidebar - using imported component */}
+      <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       <div className="lg:ml-64 flex flex-col min-h-screen">
-        <TopAppBar />
+        {/* Top App Bar */}
+        <TopAppBar onMenuClick={() => setMobileOpen(!mobileOpen)} />
 
         <main className="pt-24 pb-24 px-4 md:px-8 flex-1 flex flex-col">
           {/* Chat Container */}
