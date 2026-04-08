@@ -116,11 +116,13 @@ function BarChart({ daily, loading }) {
     return (
       <div className="h-64 flex items-end justify-between gap-4 px-4 border-b border-slate-100 dark:border-slate-700">
         {Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} className="w-full flex flex-col items-center gap-2">
-            <div
-              className="w-full bg-slate-100 dark:bg-slate-700 rounded-t-lg animate-pulse"
-              style={{ height: `${60 + Math.random() * 30}%` }}
-            />
+          <div key={i} className="flex-1 flex flex-col items-center gap-2">
+            <div className="h-48 w-full flex items-end">
+              <div
+                className="w-full bg-slate-100 dark:bg-slate-700 rounded-t-lg animate-pulse"
+                style={{ height: `${60 + Math.random() * 30}%` }}
+              />
+            </div>
             <div className="h-2 w-6 bg-slate-100 dark:bg-slate-700 rounded animate-pulse" />
           </div>
         ))}
@@ -128,32 +130,43 @@ function BarChart({ daily, loading }) {
     );
   }
 
-const balances = daily.map((d) => d.predicted_balance ?? 0);
-const minBalance = Math.min(...balances);
-const maxBalance = Math.max(...balances);
-const range = Math.max(maxBalance - minBalance, 1);
+  const balances = daily.map((d) => d.predicted_balance ?? 0);
+  const maxAbs = Math.max(...balances.map((b) => Math.abs(b)), 1);
+
   return (
-    <div className="h-64 flex items-end justify-between gap-2 px-4 border-b border-slate-100 dark:border-slate-700">
+    <div className="h-64 flex items-end justify-between gap-3 px-4 border-b border-slate-100 dark:border-slate-700">
       {daily.map((day, i) => {
         const balance = day.predicted_balance ?? 0;
         const isNegative = balance < 0;
-const heightPct = Math.max(8, ((balance - minBalance) / range) * 100);
+        const heightPct = Math.max(10, (Math.abs(balance) / maxAbs) * 100);
+
         return (
-          <div key={i} className="w-full flex flex-col items-center gap-2 group relative">
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+          <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
+            {/* Tooltip */}
+            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
               Day {day.day}: {formatINR(balance)}
             </div>
-            <div
-              className={`w-full rounded-t-lg relative transition-all ${
-                isNegative
-                  ? 'bg-red-200 dark:bg-red-900/30 group-hover:bg-red-300 dark:group-hover:bg-red-800/30'
-                  : 'bg-sky-200 dark:bg-sky-900/30 group-hover:bg-sky-300 dark:group-hover:bg-sky-800/30'
-              }`}
-              style={{ height: `${heightPct}%` }}
-            >
-              <div className={`absolute inset-x-0 top-0 h-1 rounded-t-full ${isNegative ? 'bg-red-500' : 'bg-sky-900 dark:bg-sky-400'}`} />
+
+            {/* FIXED HEIGHT AREA */}
+            <div className="h-48 w-full flex items-end">
+              <div
+                className={`w-full rounded-t-lg relative transition-all duration-500 ${
+                  isNegative
+                    ? 'bg-red-200 dark:bg-red-900/30 hover:bg-red-300 dark:hover:bg-red-800/30'
+                    : 'bg-sky-200 dark:bg-sky-900/30 hover:bg-sky-300 dark:hover:bg-sky-800/30'
+                }`}
+                style={{ height: `${heightPct}%` }}
+              >
+                <div
+                  className={`absolute inset-x-0 top-0 h-1 rounded-t-full ${
+                    isNegative ? 'bg-red-500' : 'bg-sky-900 dark:bg-sky-400'
+                  }`}
+                />
+              </div>
             </div>
-            <span className="text-[9px] font-bold text-slate-400 uppercase">
+
+            {/* Label */}
+            <span className="text-[10px] font-bold text-slate-400 uppercase">
               D{day.day}
             </span>
           </div>
@@ -435,9 +448,8 @@ export default function CashFlowForecast() {
 
   // ✅ fetchForecast re-runs whenever businessId or forecastDays changes
   const fetchForecast = useCallback(async () => {
-    setLoading(true);
-    setData(null);
-    setError(null);
+     setLoading(true);
+setError(null);
     try {
       const res = await fetch(`${API_BASE}/api/cashflow/predict`, {
         method: 'POST',

@@ -193,8 +193,11 @@ const handleAnalyze = async () => {
 
     if (!res.ok) throw new Error(data?.detail || data?.message || "API request failed");
 
-    const analysis = data?.data?.analysis || data?.data || data;
-    setResult(analysis);
+    setResult(
+      data.data?.analysis
+        ? { ...data.data.analysis, input: data.data.input }
+        : data.data
+    );
   } catch (err) {
     console.error("❌ Analyze Transaction Error:", err);
     setError(err.message || "Something went wrong while analyzing transaction.");
@@ -206,7 +209,7 @@ const handleAnalyze = async () => {
   // ── Derived values from the real API shape ────────────────────────────────
   // API returns: result.confidence (not confidence_score)
   const confidence = useMemo(() => {
-    if (!result?.confidence) return "—";
+    if (result?.confidence == null) return "—";
     return `${Number(result.confidence).toFixed(1)}%`;
   }, [result]);
 
