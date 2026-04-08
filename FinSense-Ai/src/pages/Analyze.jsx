@@ -57,29 +57,54 @@ function Topbar({ onMenuClick }) {
 // ── Forecast Daily Bar Chart (real data from API) ────────────────────────────
 function ForecastBarChart({ daily }) {
   if (!daily || daily.length === 0) return null;
-  const maxBalance = Math.max(...daily.map((d) => d.balance));
+
+  const balances = daily.map((d) => Number(d.balance ?? 0));
+  const minBalance = Math.min(...balances);
+  const maxBalance = Math.max(...balances);
+  const range = Math.max(maxBalance - minBalance, 1);
 
   return (
-    <div className="h-48 w-full flex items-end justify-around gap-3 px-2 py-4 bg-gradient-to-t from-blue-50/40 to-transparent rounded-xl">
-      {daily.map((day, idx) => {
-        const heightPercent = (day.balance / maxBalance) * 100;
-        return (
-          <div key={idx} className="flex flex-col items-center justify-end gap-1.5 flex-1 group">
-            <div className="text-[10px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity text-center">
-              {formatCompact(day.balance)}
-            </div>
+    <div className="w-full rounded-xl bg-gradient-to-t from-blue-50/40 to-transparent px-3 py-5">
+      <div className="h-56 flex items-end justify-between gap-3">
+        {daily.map((day, idx) => {
+          const balance = Number(day.balance ?? 0);
+
+          // normalize between min and max
+          const heightPercent = Math.max(
+            12,
+            ((balance - minBalance) / range) * 100
+          );
+
+          return (
             <div
-              className="w-full rounded-t-lg transition-all duration-500 relative"
-              style={{
-                height: `${heightPercent}%`,
-                background: "linear-gradient(to top, #005A92, #3b82f6)",
-                minHeight: "8px",
-              }}
-            />
-            <span className="text-[10px] font-bold text-slate-500">D{day.day}</span>
-          </div>
-        );
-      })}
+              key={idx}
+              className="flex-1 flex flex-col items-center justify-end gap-2 group"
+            >
+              {/* Hover Value */}
+              <div className="text-[10px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity text-center">
+                {formatCompact(balance)}
+              </div>
+
+              {/* Fixed Bar Area */}
+              <div className="h-44 w-full flex items-end">
+                <div
+                  className="w-full rounded-t-xl transition-all duration-500 shadow-sm"
+                  style={{
+                    height: `${heightPercent}%`,
+                    background: "linear-gradient(to top, #005A92, #3b82f6)",
+                    minHeight: "10px",
+                  }}
+                />
+              </div>
+
+              {/* Day label */}
+              <span className="text-[11px] font-bold text-slate-500">
+                D{day.day}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
