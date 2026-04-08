@@ -128,15 +128,16 @@ function BarChart({ daily, loading }) {
     );
   }
 
-  const balances = daily.map((d) => d.predicted_balance ?? 0);
-  const maxAbs = Math.max(...balances.map(Math.abs), 1);
-
+const balances = daily.map((d) => d.predicted_balance ?? 0);
+const minBalance = Math.min(...balances);
+const maxBalance = Math.max(...balances);
+const range = Math.max(maxBalance - minBalance, 1);
   return (
     <div className="h-64 flex items-end justify-between gap-2 px-4 border-b border-slate-100 dark:border-slate-700">
       {daily.map((day, i) => {
         const balance = day.predicted_balance ?? 0;
         const isNegative = balance < 0;
-        const heightPct = Math.max(8, (Math.abs(balance) / maxAbs) * 100);
+const heightPct = Math.max(8, ((balance - minBalance) / range) * 100);
         return (
           <div key={i} className="w-full flex flex-col items-center gap-2 group relative">
             <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">

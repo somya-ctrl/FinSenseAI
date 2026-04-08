@@ -148,44 +148,60 @@ export default function AnalyzeTransaction() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleAnalyze = async () => {
-    if (!form.business_id) {
-      setError("Please fill in Business ID to run analysis.");
-      return;
-    }
+const handleAnalyze = async () => {
+  if (!form.business_id) {
+    setError("Please fill in Business ID to run analysis.");
+    return;
+  }
 
-    setLoading(true);
-    setError("");
-    setResult(null);
+  if (!form.description || !form.amount) {
+    setError("Please fill Description and Amount.");
+    return;
+  }
 
+  setLoading(true);
+  setError("");
+  setResult(null);
+
+  try {
+    const payload = {
+      description: form.description,
+      amount: Number(form.amount),
+      income: Number(form.income || 0),
+      expense: Number(form.expense || 0),
+      current_balance: Number(form.current_balance || 0),
+      user_id: form.user_id,
+      business_id: form.business_id,
+      forecast_days: forecastDays,
+    };
+
+    console.log("Sending payload:", payload);
+
+    const res = await fetch(`${API_BASE}/analyze/single`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const rawText = await res.text();
+    let data;
     try {
-      const res = await fetch(`${API_BASE}/analyze/single`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ business_id: form.business_id }),
-      });
-
-      const rawText = await res.text();
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        throw new Error("Server returned invalid JSON.");
-      }
-
-      if (!res.ok) throw new Error(data?.detail || data?.message || "API request failed");
-
-      // ── Map the full nested response ──────────────────────────────────────
-      // data.data.analysis is the full ML analysis object
-      const analysis = data?.data?.analysis || data?.data || data;
-      setResult(analysis);
-    } catch (err) {
-      console.error("❌ Analyze Transaction Error:", err);
-      setError(err.message || "Something went wrong while analyzing transaction.");
-    } finally {
-      setLoading(false);
+      data = JSON.parse(rawText);
+    } catch {
+      throw new Error("Server returned invalid JSON.");
     }
-  };
+
+    if (!res.ok) throw new Error(data?.detail || data?.message || "API request failed");
+
+    const analysis = data?.data?.analysis || data?.data || data;
+    setResult(analysis);
+  } catch (err) {
+    console.error("❌ Analyze Transaction Error:", err);
+    setError(err.message || "Something went wrong while analyzing transaction.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ── Derived values from the real API shape ────────────────────────────────
   // API returns: result.confidence (not confidence_score)
