@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Sidebar, { Icon } from './Sidebar';
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const API_BASE = 'http://localhost:3000';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api').replace(/\/api\/?$/, '');
 const DEFAULT_BUSINESS_ID = 'BIZ_001';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
