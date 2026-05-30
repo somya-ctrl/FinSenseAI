@@ -34,7 +34,7 @@ const PasswordStrength = ({ password }) => {
   );
 };
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
 export default function Signup() {
   const navigate = useNavigate();
