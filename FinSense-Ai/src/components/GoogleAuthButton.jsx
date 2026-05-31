@@ -4,6 +4,7 @@ import axios from 'axios'
 function GoogleAuthButton() {
   const handleSuccess = async (credentialResponse) => {
     try {
+      console.log("API URL:", import.meta.env.VITE_API_BASE_URL)
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/auth/google`,
         {

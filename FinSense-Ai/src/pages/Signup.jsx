@@ -66,7 +66,7 @@ export default function Signup() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/signup`, {
+      const res = await fetch(`${API_BASE}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
@@ -286,9 +286,11 @@ export default function Signup() {
                 <div className="flex-1 h-px bg-slate-200" />
               </div>
 
-              {/* Google Login */}
+              {/* Google Signup */}
               <div className="flex justify-center">
                 <GoogleLogin
+                  text="signup_with"
+                  context="signup"
                   onSuccess={async (credentialResponse) => {
                     try {
                       const res = await axios.post(`${API_BASE}/auth/google`, {

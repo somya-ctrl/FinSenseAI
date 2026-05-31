@@ -6,5 +6,12 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: "dist"
+  },
+  server: {
+    headers: {
+      // Required for Google OAuth popup to postMessage back to the opener
+      "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+      "Cross-Origin-Embedder-Policy": "unsafe-none",
+    }
   }
 })
